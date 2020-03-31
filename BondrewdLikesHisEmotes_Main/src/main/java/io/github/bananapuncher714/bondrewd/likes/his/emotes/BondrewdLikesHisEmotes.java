@@ -75,7 +75,11 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 
 		ASSET_DIR.mkdirs();
 
-		FileUtil.saveToFile( getResource( "README.md" ), new File( getDataFolder() + "/" + "README.md" ), true );
+		File README = new File( getDataFolder() + "/" + "README.md" );
+		if ( !README.exists() ) {
+			saveDefaultAssets();
+		}
+		FileUtil.saveToFile( getResource( "README.md" ), README, true );
 
 		loadEmotes();
 		loadPermissions();
@@ -146,6 +150,35 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		return false;
 	}
 
+	private void saveDefaultAssets() {
+		saveResourceToAssetsFile( "aqua.png" );
+		saveResourceToAssetsFile( "aqua_chibi.png" );
+		saveResourceToAssetsFile( "BK.png" );
+		saveResourceToAssetsFile( "bonegun.png" );
+		saveResourceToAssetsFile( "bonethink.png" );
+		saveResourceToAssetsFile( "emoji_38.png" );
+		saveResourceToAssetsFile( "fork.png" );
+		saveResourceToAssetsFile( "nikounamused.png" );
+		saveResourceToAssetsFile( "ozensmug.png" );
+		saveResourceToAssetsFile( "pepewhy.png" );
+		saveResourceToAssetsFile( "Regg.png" );
+		saveResourceToAssetsFile( "rikoangry.png" );
+		saveResourceToAssetsFile( "rikoeyes.png" );
+		saveResourceToAssetsFile( "shrugsmug.png" );
+		saveResourceToAssetsFile( "siggy.png" );
+		saveResourceToAssetsFile( "yeeko.png" );
+		// This is because for some reason windows doesn't differentiate between upper and lower case
+		saveResourceToAssetsFile( "YeEkO(2).png", "YeEkO.png" );
+	}
+	
+	private void saveResourceToAssetsFile( String data ) {
+		saveResourceToAssetsFile( data, data );
+	}
+
+	private void saveResourceToAssetsFile( String data, String fileName ) {
+		FileUtil.saveToFile( getResource( "data/" + data ), new File( ASSET_DIR + "/" + fileName ), false );
+	}
+	
 	private void loadEmotes() {
 		FontIndex index;
 		if ( ORIGINAL_FONT.exists() && ORIGINAL_FONT.isFile() ) {
@@ -167,7 +200,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 			for ( File file : ASSET_DIR.listFiles() ) {
 				String fileName = file.getName();
 				if ( fileName.endsWith( ".png" ) ) {
-					String emoteName = fileName.replaceFirst( "\\.png$", "" );
+					String emoteName = fileName.replaceFirst( "\\.png$", "" ).replaceAll( "[^a-zA-Z0-9_]+", "" );
 					emotes.put( emoteName, ( char ) c );
 
 					FontBitmap provider = new FontBitmap( new NamespacedKey( "emotes/" + fileName ), new String[] { String.valueOf( ( char ) c ) } );
