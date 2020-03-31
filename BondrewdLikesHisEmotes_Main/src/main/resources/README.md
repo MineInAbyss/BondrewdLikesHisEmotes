@@ -20,5 +20,9 @@ Place the generated `/plugins/BondrewdLikesHisEmotes/default.json` file in the `
 - `bondrewdemotes.list` - Permission to use the list command. True by default.
 - `bondrewdemotes.admin` - Permission to use all the emotes and commands. OP by default.
 
+### Commands
+- `/emote list` - List all the emotes that the player has permission for.
+- `/emote reload` - Reload the list of valid emotes
+
 ### Additional info
 Note that it *is* possible for players to copy and paste the corresponding unicode character directly into chat and bypass permissions.
