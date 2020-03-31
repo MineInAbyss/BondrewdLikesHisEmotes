@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -20,7 +19,6 @@ import java.util.Map.Entry;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.StringUtil;
@@ -42,6 +40,8 @@ import io.github.bananapuncher714.bondrewd.likes.his.emotes.util.PermissionBuild
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.util.ReflectionUtil;
 
 public class BondrewdLikesHisEmotes extends JavaPlugin {
+	// Could technically be 8, but it's small enough as it is so why not 9
+	public static final int EMOTE_HEIGHT = 9;
 	private static final char STARTING_CHAR = '\uEBAF';
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
@@ -92,12 +92,11 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		// Just a simple tab complete for now...
 		List< String > completions = new ArrayList< String >();
 		List< String > suggestions = new ArrayList< String >();
-		Player player = ( Player ) sender;
 		if ( args.length == 1 ) {
-			if ( player.hasPermission( "bondrewdemotes.reload" ) ) {
+			if ( sender.hasPermission( "bondrewdemotes.reload" ) ) {
 				suggestions.add( "reload" );
 			}
-			if ( player.hasPermission( "bondrewdemotes.list" ) ) {
+			if ( sender.hasPermission( "bondrewdemotes.list" ) ) {
 				suggestions.add( "list" );
 			}
 		}

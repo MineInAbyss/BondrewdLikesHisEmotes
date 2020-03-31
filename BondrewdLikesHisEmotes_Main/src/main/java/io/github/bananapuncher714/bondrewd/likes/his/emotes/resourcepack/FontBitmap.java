@@ -3,11 +3,13 @@ package io.github.bananapuncher714.bondrewd.likes.his.emotes.resourcepack;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
+import io.github.bananapuncher714.bondrewd.likes.his.emotes.BondrewdLikesHisEmotes;
+
 public class FontBitmap extends FontProvider {
 	protected NamespacedKey file;
 	protected String[] chars;
-	protected int ascent = 0;
-	protected int height = 9;
+	protected int ascent = BondrewdLikesHisEmotes.EMOTE_HEIGHT;
+	protected int height = BondrewdLikesHisEmotes.EMOTE_HEIGHT;
 	
 	public FontBitmap( NamespacedKey path, String[] chars ) {
 		super( "bitmap" );
