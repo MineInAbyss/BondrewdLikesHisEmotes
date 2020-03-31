@@ -24,9 +24,10 @@ public class NMSHandler implements PacketHandler {
 	@Override
 	public void inject( Channel channel ) {
 		try {
-		channel.pipeline().replace( PacketEncoder.class, "encoder", new CustomPacketEncoder() );
+			channel.pipeline().replace( PacketEncoder.class, "encoder", new CustomPacketEncoder() );
 		} catch ( IllegalArgumentException | NoSuchElementException  e ) {
 			// We might have replaced it already
+			// Don't go around reloading the server without properly stopping/starting it though
 		}
 	}
 
