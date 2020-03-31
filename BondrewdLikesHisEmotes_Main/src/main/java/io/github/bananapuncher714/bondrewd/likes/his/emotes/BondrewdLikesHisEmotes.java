@@ -133,7 +133,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		for ( Entry< String, Character > entry : emotes.entrySet() ) {
 			String search = ":" + entry.getKey() + ":";
 			string = string.replaceAll( "(?<!\\\\)" + search, String.valueOf( entry.getValue() ) );
-			string = string.replace( "\\" + search, search );
+			string = string.replace( "\\\\" + search, search );
 		}
 		return string;
 	}
