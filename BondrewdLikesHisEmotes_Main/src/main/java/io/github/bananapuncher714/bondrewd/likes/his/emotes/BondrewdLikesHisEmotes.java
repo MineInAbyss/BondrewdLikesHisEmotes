@@ -11,13 +11,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.bukkit.Bukkit;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -32,6 +25,7 @@ import io.github.bananapuncher714.bondrewd.likes.his.emotes.api.StringTransforme
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.resourcepack.FontBitmap;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.resourcepack.FontIndex;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.resourcepack.NamespacedKey;
+import io.github.bananapuncher714.bondrewd.likes.his.emotes.tinyprotocol.TinyProtocol;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.util.FileUtil;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.util.PermissionBuilder;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.util.ReflectionUtil;
@@ -52,20 +46,17 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 	@Override
 	public void onEnable() {
 		handler = ReflectionUtil.getNewPacketHandlerInstance();
+		if ( handler == null ) {
+			getLogger().severe( ReflectionUtil.VERSION + " is not currently supported! Disabling..." );
+			setEnabled( false );
+			return;
+		} else {
+			getLogger().info( "Detected version " + ReflectionUtil.VERSION );
+		}
+		
 		handler.setTransformer( transformer );
 		
-		// Inject all future players
-		Bukkit.getPluginManager().registerEvents( new Listener() {
-			@EventHandler
-			private void onEvent( PlayerJoinEvent event ) {
-				handler.inject( event.getPlayer() );
-			}
-		}, this );
-		
-		// Inject all currently online players
-		for ( Player player : Bukkit.getOnlinePlayers() ) {
-			handler.inject( player );
-		}
+		new TinyProtocol( this ) {};
 		
 		MODIFIED_FONT = new File( getDataFolder() + "/" + "default.json" );
 		ASSET_DIR = new File( getDataFolder() + "/assets/" );
@@ -78,14 +69,10 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		loadEmotes();
 		loadPermissions();
 		
-		getLogger().info( "Loaded emotes: " + String.join( " ", emotes.keySet() ) );
-	}
-	
-	@Override
-	public void onDisable() {
-		// Clean up
-		for ( Player player : Bukkit.getOnlinePlayers() ) {
-			handler.uninject( player );
+		if ( emotes.isEmpty() ) {
+			getLogger().info( "Didn't detect any emotes! Perhaps placed in the wrong folder?" );
+		} else {
+			getLogger().info( "Loaded emotes: " + String.join( " ", emotes.keySet() ) );
 		}
 	}
 	
@@ -109,7 +96,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		if ( ASSET_DIR.exists() && ASSET_DIR.isDirectory() ) {
 			for ( File file : ASSET_DIR.listFiles() ) {
 				String fileName = file.getName();
-				if ( fileName.matches( "*\\.png" ) ) {
+				if ( fileName.endsWith( ".png" ) ) {
 					String emoteName = fileName.replaceFirst( "\\.png$", "" );
 					emotes.put( emoteName, ( char ) c );
 					
@@ -144,8 +131,14 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 	
 	private String transform( String string ) {
 		for ( Entry< String, Character > entry : emotes.entrySet() ) {
-			string = string.replace( entry.getKey(), String.valueOf( entry.getValue() ) );
+			String search = ":" + entry.getKey() + ":";
+			string = string.replaceAll( "(?<!\\\\)" + search, String.valueOf( entry.getValue() ) );
+			string = string.replace( "\\" + search, search );
 		}
 		return string;
+	}
+	
+	public static PacketHandler getHandler() {
+		return JavaPlugin.getPlugin( BondrewdLikesHisEmotes.class ).handler;
 	}
 }
