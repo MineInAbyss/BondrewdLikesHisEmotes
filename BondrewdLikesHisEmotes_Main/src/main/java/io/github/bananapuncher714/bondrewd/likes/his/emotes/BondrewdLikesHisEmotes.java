@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -17,6 +18,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import com.google.gson.Gson;
@@ -31,6 +33,7 @@ import io.github.bananapuncher714.bondrewd.likes.his.emotes.resourcepack.FontBit
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.resourcepack.FontIndex;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.resourcepack.NamespacedKey;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.util.FileUtil;
+import io.github.bananapuncher714.bondrewd.likes.his.emotes.util.PermissionBuilder;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.util.ReflectionUtil;
 
 public class BondrewdLikesHisEmotes extends JavaPlugin {
@@ -38,7 +41,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	
 	private PacketHandler handler;
-	private StringTransformer transformer;
+	private StringTransformer transformer = this::transform;
 	
 	private File MODIFIED_FONT;
 	private File ASSET_DIR;
@@ -49,6 +52,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 	@Override
 	public void onEnable() {
 		handler = ReflectionUtil.getNewPacketHandlerInstance();
+		handler.setTransformer( transformer );
 		
 		// Inject all future players
 		Bukkit.getPluginManager().registerEvents( new Listener() {
@@ -73,6 +77,8 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		
 		loadEmotes();
 		loadPermissions();
+		
+		getLogger().info( "Loaded emotes: " + String.join( " ", emotes.keySet() ) );
 	}
 	
 	@Override
@@ -128,6 +134,18 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 	}
 	
 	private void loadPermissions() {
-		
+		PermissionBuilder admin = new PermissionBuilder( "bondrewdemotes.admin" ).setDefault( PermissionDefault.OP );
+		PermissionBuilder all = new PermissionBuilder( "bondrewdemotes.all" ).setDefault( PermissionDefault.OP );
+		for ( String key : emotes.keySet() ) {
+			all.addChild( new PermissionBuilder( "bondrewdemotes.emote." + key ).setDefault( PermissionDefault.OP ).register().build(), true );
+		}
+		admin.addChild( all.register().build(), true ).register();
+	}
+	
+	private String transform( String string ) {
+		for ( Entry< String, Character > entry : emotes.entrySet() ) {
+			string = string.replace( entry.getKey(), String.valueOf( entry.getValue() ) );
+		}
+		return string;
 	}
 }
