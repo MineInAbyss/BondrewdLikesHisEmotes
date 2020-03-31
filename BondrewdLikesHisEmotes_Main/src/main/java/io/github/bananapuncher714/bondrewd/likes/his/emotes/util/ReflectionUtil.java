@@ -1,4 +1,4 @@
-package io.github.bananapuncher714.bondrewd.likes.his.emotes;
+package io.github.bananapuncher714.bondrewd.likes.his.emotes.util;
 
 import org.bukkit.Bukkit;
 
