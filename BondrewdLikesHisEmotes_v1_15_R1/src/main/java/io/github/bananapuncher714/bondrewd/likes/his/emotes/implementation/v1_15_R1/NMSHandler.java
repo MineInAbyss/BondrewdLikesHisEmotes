@@ -23,13 +23,11 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.handler.codec.MessageToByteEncoder;
-import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.server.v1_15_R1.EnumProtocol;
 import net.minecraft.server.v1_15_R1.EnumProtocolDirection;
 import net.minecraft.server.v1_15_R1.IChatBaseComponent;
 import net.minecraft.server.v1_15_R1.MinecraftServer;
 import net.minecraft.server.v1_15_R1.NBTBase;
-import net.minecraft.server.v1_15_R1.NBTList;
 import net.minecraft.server.v1_15_R1.NBTTagCompound;
 import net.minecraft.server.v1_15_R1.NBTTagList;
 import net.minecraft.server.v1_15_R1.NBTTagString;
@@ -192,8 +190,6 @@ public class NMSHandler implements PacketHandler {
 				} else if ( base instanceof NBTTagList ) {
 					transform( ( NBTTagList ) base );
 				} else if ( base instanceof NBTTagString ) {
-					System.out.println( ( ( NBTTagString ) base ).asString() );
-					System.out.println( transformer.transform( ( ( NBTTagString ) base ).asString() ) );
 					compound.set( key, NBTTagString.a( transformer.transform( ( ( NBTTagString ) base ).asString() ) ) );
 				}
 			}
