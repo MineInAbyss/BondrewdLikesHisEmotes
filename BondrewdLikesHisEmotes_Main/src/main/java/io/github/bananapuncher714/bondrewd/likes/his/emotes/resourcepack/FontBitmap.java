@@ -8,7 +8,7 @@ import io.github.bananapuncher714.bondrewd.likes.his.emotes.BondrewdLikesHisEmot
 public class FontBitmap extends FontProvider {
 	protected NamespacedKey file;
 	protected String[] chars;
-	protected int ascent = BondrewdLikesHisEmotes.EMOTE_HEIGHT;
+	protected int ascent = BondrewdLikesHisEmotes.EMOTE_ASCENT;
 	protected int height = BondrewdLikesHisEmotes.EMOTE_HEIGHT;
 	
 	public FontBitmap( NamespacedKey path, String[] chars ) {

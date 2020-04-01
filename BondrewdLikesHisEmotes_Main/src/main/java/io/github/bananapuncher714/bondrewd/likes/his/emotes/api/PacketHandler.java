@@ -1,9 +1,10 @@
 package io.github.bananapuncher714.bondrewd.likes.his.emotes.api;
 
-import io.netty.channel.Channel;
+import org.bukkit.entity.Player;
 
 public interface PacketHandler {
-	void inject( Channel channel );
+	void inject( Player player );
+	void uninject( Player player );
 	void setTransformer( StringTransformer transformer );
 	StringTransformer getTransformer();
 }

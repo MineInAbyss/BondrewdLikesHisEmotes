@@ -11,14 +11,20 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.TreeSet;
+import java.util.concurrent.ConcurrentHashMap;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.StringUtil;
@@ -34,14 +40,14 @@ import io.github.bananapuncher714.bondrewd.likes.his.emotes.api.StringTransforme
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.resourcepack.FontBitmap;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.resourcepack.FontIndex;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.resourcepack.NamespacedKey;
-import io.github.bananapuncher714.bondrewd.likes.his.emotes.tinyprotocol.TinyProtocol;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.util.FileUtil;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.util.PermissionBuilder;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.util.ReflectionUtil;
 
 public class BondrewdLikesHisEmotes extends JavaPlugin {
 	// Could technically be 8, but it's small enough as it is so why not 9
-	public static final int EMOTE_HEIGHT = 9;
+	public static final int EMOTE_HEIGHT = 11;
+	public static final int EMOTE_ASCENT = 9;
 	private static final char STARTING_CHAR = '\uEBAF';
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
@@ -52,7 +58,8 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 	private File ASSET_DIR;
 	private File ORIGINAL_FONT;
 
-	private Map< String, Character > emotes = new HashMap< String, Character >();
+	// Prevent concurrent errors or something
+	private Map< String, Character > emotes = new ConcurrentHashMap< String, Character >();
 
 	@Override
 	public void onEnable() {
@@ -67,8 +74,13 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 
 		handler.setTransformer( transformer );
 
-		new TinyProtocol( this ) {};
-
+		Bukkit.getPluginManager().registerEvents( new Listener() {
+			@EventHandler
+			private void onEvent( PlayerJoinEvent event ) {
+				handler.inject( event.getPlayer() );
+			}
+		}, this );
+		
 		MODIFIED_FONT = new File( getDataFolder() + "/" + "default.json" );
 		ASSET_DIR = new File( getDataFolder() + "/assets/" );
 		ORIGINAL_FONT = new File( ASSET_DIR + "/" + "default.json" );
@@ -91,6 +103,13 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		}
 	}
 
+	@Override
+	public void onDisable() {
+		for ( Player player : Bukkit.getOnlinePlayers() ) {
+			handler.uninject( player );
+		}
+	}
+	
 	@Override
 	public List< String > onTabComplete( CommandSender sender, Command command, String alias, String[] args ) {
 		// Just a simple tab complete for now...
@@ -200,7 +219,13 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		emotes.clear();
 		int c = STARTING_CHAR;
 		if ( ASSET_DIR.exists() && ASSET_DIR.isDirectory() ) {
+			// Make sure the emotes get scanned in the same order no matter where they are
+			TreeSet< File > alphabetized = new TreeSet< File >( ( f1, f2 ) -> f1.getName().compareTo( f2.getName() ) );
 			for ( File file : ASSET_DIR.listFiles() ) {
+				alphabetized.add( file );
+			}
+			// Shouldn't need to use Iterator explicitly here?
+			for ( File file : alphabetized ) {
 				String fileName = file.getName();
 				if ( fileName.endsWith( ".png" ) ) {
 					String emoteName = fileName.replaceFirst( "\\.png$", "" ).replaceAll( "[^a-zA-Z0-9_]+", "" );
