@@ -10,7 +10,7 @@ public class NamespacedKey {
 	
 	public NamespacedKey( String namespace, String key ) {
 		this.namespace = namespace.toLowerCase();
-		this.key = key.toLowerCase();
+		this.key = key;
 	}
 	
 	public String toString() {

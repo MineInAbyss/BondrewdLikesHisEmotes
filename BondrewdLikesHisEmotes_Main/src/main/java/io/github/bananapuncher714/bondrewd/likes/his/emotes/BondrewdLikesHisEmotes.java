@@ -124,10 +124,13 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 				if ( sender.hasPermission( "bondrewdemotes.list" ) ) {
 
 					StringBuilder builder = new StringBuilder( ChatColor.WHITE + "Available emotes: " );
-					builder.append( ChatColor.YELLOW );
 					boolean found = false;
 					for ( String key : emotes.keySet() ) {
 						if ( sender.hasPermission( "bondrewdemotes.emote." + key ) ) {
+							builder.append( ChatColor.WHITE );
+							builder.append( emotes.get( key ) );
+							builder.append( " " );
+							builder.append( ChatColor.YELLOW );
 							builder.append( key );
 							builder.append( " " );
 							found = true;

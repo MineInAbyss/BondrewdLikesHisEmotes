@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>io.github.bananapuncher714</groupId>
 	<artifactId>BondrewdLikesHisEmotes_Master</artifactId>
-	<version>1.0.0</version>
+	<version>1.0.1</version>
 	<name>BondrewdLikesHisEmotes_Master</name>
 	<description>Custom emote translater for Mine in Abyss</description>
 	<packaging>pom</packaging>
