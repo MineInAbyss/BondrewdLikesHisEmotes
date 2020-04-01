@@ -255,6 +255,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 
 	private void loadPermissions() {
 		PermissionBuilder admin = new PermissionBuilder( "bondrewdemotes.admin" ).setDefault( PermissionDefault.OP );
+		// Right now the emote permissions don't do anything apart from showing up in the list of emotes.
 		PermissionBuilder all = new PermissionBuilder( "bondrewdemotes.all" ).setDefault( PermissionDefault.OP );
 		for ( String key : emotes.keySet() ) {
 			all.addChild( new PermissionBuilder( "bondrewdemotes.emote." + key ).setDefault( PermissionDefault.OP ).register().build(), true );

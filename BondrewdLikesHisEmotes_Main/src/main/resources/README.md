@@ -14,8 +14,8 @@ Place the `default.json` file in the `/plugins/BondrewdLikesHisEmotes/assets/` f
 Place the generated `/plugins/BondrewdLikesHisEmotes/default.json` file in the `/assets/minecraft/font/` directory of the resource pack, and place all images in the `/assets/minecraft/textures/emotes/` folder.
 
 ### Permissions
-- `bondrewdemotes.emote.<emote>` - Permission to use the specified emote. OP by default.
-- `bondrewdemotes.all` - Permission to use all emotes. OP by default.
+- `bondrewdemotes.emote.<emote>` - Permission to use the specified emote. OP by default. Doesn't actually prevent the user from typing emotes, it just stops them from showing up in the list.
+- `bondrewdemotes.all` - Permission to use all emotes. OP by default. Doesn't actually prevent the user from typing emotes, it just stops them from showing up in the list.
 - `bondrewdemotes.reload` - Permission to use the reload command. OP by default.
 - `bondrewdemotes.list` - Permission to use the list command. True by default.
 - `bondrewdemotes.admin` - Permission to use all the emotes and commands. OP by default.

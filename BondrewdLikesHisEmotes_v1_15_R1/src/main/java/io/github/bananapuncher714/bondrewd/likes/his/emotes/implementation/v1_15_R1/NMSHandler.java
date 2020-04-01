@@ -23,10 +23,16 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.handler.codec.MessageToByteEncoder;
+import net.md_5.bungee.api.chat.TextComponent;
 import net.minecraft.server.v1_15_R1.EnumProtocol;
 import net.minecraft.server.v1_15_R1.EnumProtocolDirection;
+import net.minecraft.server.v1_15_R1.IChatBaseComponent;
 import net.minecraft.server.v1_15_R1.MinecraftServer;
+import net.minecraft.server.v1_15_R1.NBTBase;
+import net.minecraft.server.v1_15_R1.NBTList;
 import net.minecraft.server.v1_15_R1.NBTTagCompound;
+import net.minecraft.server.v1_15_R1.NBTTagList;
+import net.minecraft.server.v1_15_R1.NBTTagString;
 import net.minecraft.server.v1_15_R1.NetworkManager;
 import net.minecraft.server.v1_15_R1.Packet;
 import net.minecraft.server.v1_15_R1.PacketDataSerializer;
@@ -156,6 +162,12 @@ public class NMSHandler implements PacketHandler {
 		}
 
 		@Override
+		public PacketDataSerializer a( IChatBaseComponent ichatbasecomponent ) {
+			// TODO Find some way to translate them?
+			return super.a( ichatbasecomponent );
+		}
+		
+		@Override
 		public PacketDataSerializer a( String s, int i ) {
 			if ( transformer != null ) {
 				s = transformer.transform( s );
@@ -164,9 +176,41 @@ public class NMSHandler implements PacketHandler {
 		}
 
 		@Override
-		public PacketDataSerializer a( NBTTagCompound nbttagcompound ) {
-			// TODO Maybe parse NBT compounds someday? This could be used in items and such.
-			return super.a( nbttagcompound );
+		public PacketDataSerializer a( NBTTagCompound compound ) {
+			if ( transformer != null && compound != null ) {
+				transform( compound );
+			}
+			
+			return super.a( compound );
+		}
+		
+		private void transform( NBTTagCompound compound ) {
+			for ( String key : compound.getKeys() ) {
+				NBTBase base = compound.get( key );
+				if ( base instanceof NBTTagCompound ) {
+					transform( ( NBTTagCompound ) base );
+				} else if ( base instanceof NBTTagList ) {
+					transform( ( NBTTagList ) base );
+				} else if ( base instanceof NBTTagString ) {
+					System.out.println( ( ( NBTTagString ) base ).asString() );
+					System.out.println( transformer.transform( ( ( NBTTagString ) base ).asString() ) );
+					compound.set( key, NBTTagString.a( transformer.transform( ( ( NBTTagString ) base ).asString() ) ) );
+				}
+			}
+		}
+		
+		private void transform( NBTTagList list ) {
+			List< NBTBase > objects = new ArrayList< NBTBase >( list );
+			for ( NBTBase base : objects ) {
+				if ( base instanceof NBTTagCompound ) {
+					transform( ( NBTTagCompound ) base );
+				} else if ( base instanceof NBTTagList ) {
+					transform( ( NBTTagList ) base );
+				} else if ( base instanceof NBTTagString ) {
+					list.remove( base );
+					list.add( NBTTagString.a( transformer.transform( ( ( NBTTagString ) base ).asString() ) ) );
+				}
+			}
 		}
 	}
 
