@@ -14,13 +14,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.TreeSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -45,12 +46,13 @@ import io.github.bananapuncher714.bondrewd.likes.his.emotes.util.PermissionBuild
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.util.ReflectionUtil;
 
 public class BondrewdLikesHisEmotes extends JavaPlugin {
-	// Could technically be 8, but it's small enough as it is so why not 9
-	public static final int EMOTE_HEIGHT = 11;
-	public static final int EMOTE_ASCENT = 9;
+	// Could technically be 8, but it's small enough as it is so why not 11
+	private static int EMOTE_HEIGHT = 11;
+	private static int EMOTE_ASCENT = 9;
 	private static final char STARTING_CHAR = '\uEBAF';
+	private static final String DEFAULT_NAMESPACE = "emotes/";
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-
+	
 	private PacketHandler handler;
 	private StringTransformer transformer = this::transform;
 
@@ -82,18 +84,15 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		}, this );
 		
 		MODIFIED_FONT = new File( getDataFolder() + "/" + "default.json" );
-		ASSET_DIR = new File( getDataFolder() + "/assets/" );
+		ASSET_DIR = new File( getDataFolder() + "/convert/" );
 		ORIGINAL_FONT = new File( ASSET_DIR + "/" + "default.json" );
 
 		ASSET_DIR.mkdirs();
 
-		File README = new File( getDataFolder() + "/" + "README.md" );
-		if ( !README.exists() ) {
-			saveDefaultAssets();
-		}
-		FileUtil.saveToFile( getResource( "README.md" ), README, true );
-
-		loadEmotes();
+		FileUtil.saveToFile( getResource( "README.md" ), new File( getDataFolder() + "/" + "README.md" ), true );
+		FileUtil.saveToFile( getResource( "config.yml" ), new File( getDataFolder() + "/" + "config.yml" ), false );
+		
+		loadConfig();
 		loadPermissions();
 
 		if ( emotes.isEmpty() ) {
@@ -133,7 +132,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		if ( args.length == 1 ) {
 			if ( args[ 0 ].equalsIgnoreCase( "reload" ) ) {
 				if ( sender.hasPermission( "bondrewdemotes.reload" ) ) {
-					loadEmotes();
+					loadConfig();
 					loadPermissions();
 					sender.sendMessage( ChatColor.GREEN + "Done!" );
 				} else {
@@ -171,37 +170,15 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		}
 		return false;
 	}
-
-	private void saveDefaultAssets() {
-		saveResourceToAssetsFile( "aqua.png" );
-		saveResourceToAssetsFile( "aqua_chibi.png" );
-		saveResourceToAssetsFile( "BK.png" );
-		saveResourceToAssetsFile( "bonegun.png" );
-		saveResourceToAssetsFile( "bonethink.png" );
-		saveResourceToAssetsFile( "emoji_38.png" );
-		saveResourceToAssetsFile( "fork.png" );
-		saveResourceToAssetsFile( "nikounamused.png" );
-		saveResourceToAssetsFile( "ozensmug.png" );
-		saveResourceToAssetsFile( "pepewhy.png" );
-		saveResourceToAssetsFile( "Regg.png" );
-		saveResourceToAssetsFile( "rikoangry.png" );
-		saveResourceToAssetsFile( "rikoeyes.png" );
-		saveResourceToAssetsFile( "shrugsmug.png" );
-		saveResourceToAssetsFile( "siggy.png" );
-		saveResourceToAssetsFile( "yeeko.png" );
-		// This is because for some reason windows doesn't differentiate between upper and lower case
-		saveResourceToAssetsFile( "YeEkO(2).png", "YeEkO.png" );
-	}
 	
-	private void saveResourceToAssetsFile( String data ) {
-		saveResourceToAssetsFile( data, data );
-	}
-
-	private void saveResourceToAssetsFile( String data, String fileName ) {
-		FileUtil.saveToFile( getResource( "data/" + data ), new File( ASSET_DIR + "/" + fileName ), false );
-	}
-	
-	private void loadEmotes() {
+	private void loadConfig() {
+		FileConfiguration config = YamlConfiguration.loadConfiguration( new File( getDataFolder() + "/" + "config.yml" ) );
+		
+		EMOTE_HEIGHT = config.getInt( "default-height" );
+		EMOTE_ASCENT = config.getInt( "default-ascent" );
+		
+		emotes.clear();
+		
 		FontIndex index;
 		if ( ORIGINAL_FONT.exists() && ORIGINAL_FONT.isFile() ) {
 			try {
@@ -215,30 +192,26 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		} else {
 			index = new FontIndex();
 		}
-
-		emotes.clear();
+		
 		int c = STARTING_CHAR;
-		if ( ASSET_DIR.exists() && ASSET_DIR.isDirectory() ) {
-			// Make sure the emotes get scanned in the same order no matter where they are
-			TreeSet< File > alphabetized = new TreeSet< File >( ( f1, f2 ) -> f1.getName().compareTo( f2.getName() ) );
-			for ( File file : ASSET_DIR.listFiles() ) {
-				alphabetized.add( file );
-			}
-			// Shouldn't need to use Iterator explicitly here?
-			for ( File file : alphabetized ) {
-				String fileName = file.getName();
-				if ( fileName.endsWith( ".png" ) ) {
-					String emoteName = fileName.replaceFirst( "\\.png$", "" ).replaceAll( "[^a-zA-Z0-9_]+", "" );
-					emotes.put( emoteName, ( char ) c );
+		List< String > emoteList = config.getStringList( "emotes" );
+		for ( String emote : emoteList ) {
+			String[] emotePart = emote.split( "\\s+" );
+			String name = emotePart[ 0 ];
+			String namespace = emotePart.length > 1 ? emotePart[ 1 ] : DEFAULT_NAMESPACE + name + ".png";
+			int height = emotePart.length > 3 ? Integer.parseInt( emotePart[ 2 ] ) : EMOTE_HEIGHT;
+			int ascent = emotePart.length > 3 ? Integer.parseInt( emotePart[ 3 ] ) : EMOTE_ASCENT;
+			
+			emotes.put( name, ( char ) c );
 
-					FontBitmap provider = new FontBitmap( new NamespacedKey( "emotes/" + fileName ), new String[] { String.valueOf( ( char ) c ) } );
-					index.addProvider( provider );
+			FontBitmap provider = new FontBitmap( new NamespacedKey( namespace ), new String[] { String.valueOf( ( char ) c ) } );
+			provider.setHeight( height );
+			provider.setAscent( ascent );
+			index.addProvider( provider );
 
-					c++;
-				}
-			}
-		}
-
+			c++;
+		};
+		
 		if ( MODIFIED_FONT.exists() ) {
 			MODIFIED_FONT.delete();
 		}
@@ -252,7 +225,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 			e.printStackTrace();
 		}
 	}
-
+	
 	private void loadPermissions() {
 		PermissionBuilder admin = new PermissionBuilder( "bondrewdemotes.admin" ).setDefault( PermissionDefault.OP );
 		// Right now the emote permissions don't do anything apart from showing up in the list of emotes.
@@ -277,5 +250,13 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 
 	public static PacketHandler getHandler() {
 		return JavaPlugin.getPlugin( BondrewdLikesHisEmotes.class ).handler;
+	}
+	
+	public static int getEmoteHeight() {
+		return EMOTE_HEIGHT;
+	}
+	
+	public static int getEmoteAscent() {
+		return EMOTE_ASCENT;
 	}
 }

@@ -5,13 +5,13 @@ Convert phrases into emotes as specified in the Made in Abyss resource pack. Bon
 Emotes start at `\uEBAF` (Bondrewd And Friends) and increment for each additional emote.
 
 ### How to add custom emotes
-Place a png with maximum size of 256x256 in the `/plugins/BondrewdLikesHisEmotes/assets/` folder and reload the plugin. Images will be converted into the emote `:<file-name-minus-extension>:`.
+Add an entry in the list of emotes in the config. They will be converted to `:<emote-name>:` format in-game.
 
 ### How to use a pre-existing `default.json` file
-Place the `default.json` file in the `/plugins/BondrewdLikesHisEmotes/assets/` folder and it will be included.
+Place the `default.json` file in the `/plugins/BondrewdLikesHisEmotes/convert/` folder and it will be included.
 
 ### How to add to existing resource pack
-Place the generated `/plugins/BondrewdLikesHisEmotes/default.json` file in the `/assets/minecraft/font/` directory of the resource pack, and place all images in the `/assets/minecraft/textures/emotes/` folder.
+Place the generated `/plugins/BondrewdLikesHisEmotes/default.json` file in the `/assets/minecraft/font/` directory of the resource pack, and place all images in the `/assets/minecraft/textures/emotes/` folder or wherever specified by the config.
 
 ### Permissions
 - `bondrewdemotes.emote.<emote>` - Permission to use the specified emote. OP by default. Doesn't actually prevent the user from typing emotes, it just stops them from showing up in the list.

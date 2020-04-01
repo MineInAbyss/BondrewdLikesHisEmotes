@@ -1,0 +1,29 @@
+# Default height and ascent for emotes
+default-height: 11
+default-ascent: 9
+
+# Format is "name [namespace] [height ascent]"
+# name is the title of the emote in-game. They should only contain [a-zA-Z0-9_]
+# namespace is the relative path starting from the /assets/minecraft/textures/ folder. It is emotes/<emote>.png by default.
+# height is height in pixels
+# ascent is how far upwards the picture should be moved. It must not be greater than height
+emotes:
+- "aqua_chibi"
+- "aqua_big emotes/aqua_chibi.png 64 64"
+- "aqua"
+- "BK"
+- "bonegun"
+- "bonethink"
+- "emoji_38"
+- "fork"
+- "nikounamused"
+- "ozensmug"
+- "pepewhy"
+- "Regg"
+- "rikoangry"
+- "rikoeyes"
+- "shrugsmug"
+- "siggy"
+- "subarashii"
+- "yeeko"
+- "YeEkO emotes/yeeko_alternative.png"
