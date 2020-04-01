@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 
@@ -46,8 +47,8 @@ public abstract class TinyProtocol {
 	private static final AtomicInteger ID = new AtomicInteger(0);
 
 	// Used in order to lookup a channel
-	protected static final MethodInvoker getPlayerHandle = Reflection.getMethod("{obc}.entity.CraftPlayer", "getHandle");
-	protected static final FieldAccessor<Object> getConnection = Reflection.getField("{nms}.EntityPlayer", "playerConnection", Object.class);
+	private static final MethodInvoker getPlayerHandle = Reflection.getMethod("{obc}.entity.CraftPlayer", "getHandle");
+	private static final FieldAccessor<Object> getConnection = Reflection.getField("{nms}.EntityPlayer", "playerConnection", Object.class);
 	private static final FieldAccessor<Object> getManager = Reflection.getField("{nms}.PlayerConnection", "networkManager", Object.class);
 	private static final FieldAccessor<Channel> getChannel = Reflection.getField("{nms}.NetworkManager", Channel.class, 0);
 
@@ -56,14 +57,18 @@ public abstract class TinyProtocol {
 	private static final Class<Object> serverConnectionClass = Reflection.getUntypedClass("{nms}.ServerConnection");
 	private static final FieldAccessor<Object> getMinecraftServer = Reflection.getField("{obc}.CraftServer", minecraftServerClass, 0);
 	private static final FieldAccessor<Object> getServerConnection = Reflection.getField(minecraftServerClass, serverConnectionClass, 0);
-	private static final MethodInvoker getNetworkMarkers = Reflection.getTypedMethod(serverConnectionClass, null, List.class, serverConnectionClass);
-
+	
+	// Stop accessing synthetic methods if possible?
+	private static FieldAccessor< List > networkMarkersB;
+	private static MethodInvoker getNetworkMarkers;
+	
 	// Packets we have to intercept
 	private static final Class<?> PACKET_LOGIN_IN_START = Reflection.getMinecraftClass("PacketLoginInStart");
 	private static final FieldAccessor<GameProfile> getGameProfile = Reflection.getField(PACKET_LOGIN_IN_START, GameProfile.class, 0);
 
 	// Speedup channel lookup
 	private Map<String, Channel> channelLookup = new MapMaker().weakValues().makeMap();
+	private Map< UUID, Channel > uuidChannelLookup = new MapMaker().weakValues().makeMap();
 	private Listener listener;
 
 	// Channels that have already been removed
@@ -84,6 +89,20 @@ public abstract class TinyProtocol {
 	protected volatile boolean closed;
 	protected Plugin plugin;
 
+	static {
+		try {
+			networkMarkersB = Reflection.getField( serverConnectionClass, "connectedChannels", List.class );
+		} catch ( Exception exception ) {
+			// Not sure what I'm supposed to be catching here...
+		}
+		
+		try {
+			getNetworkMarkers = Reflection.getTypedMethod(serverConnectionClass, null, List.class, serverConnectionClass);
+		} catch ( Exception exception ) {
+			// ???
+		}
+	}
+	
 	/**
 	 * Construct a new instance of TinyProtocol, and start intercepting packets for all connected clients and future clients.
 	 * <p>
@@ -201,7 +220,11 @@ public abstract class TinyProtocol {
 		boolean looking = true;
 
 		// We need to synchronize against this list
-		networkManagers = (List<Object>) getNetworkMarkers.invoke(null, serverConnection);
+		if ( getNetworkMarkers == null ) {
+			networkManagers = ( List< Object > ) networkMarkersB.get( serverConnection );
+		} else {
+			networkManagers = (List<Object>) getNetworkMarkers.invoke( null, serverConnection);
+		}
 		createServerChannelHandler();
 
 		// Find the correct list, or implicitly throw an exception
@@ -246,7 +269,7 @@ public abstract class TinyProtocol {
 	}
 
 	private void registerPlayers(Plugin plugin) {
-		for ( Player player : plugin.getServer().getOnlinePlayers() ) {
+		for (Player player : plugin.getServer().getOnlinePlayers()) {
 			injectPlayer(player);
 		}
 	}
@@ -375,9 +398,9 @@ public abstract class TinyProtocol {
 				channel.pipeline().addBefore("packet_handler", handlerName, interceptor);
 				uninjectedChannels.remove(channel);
 			}
-			
-			BondrewdLikesHisEmotes.getHandler().inject( channel );
 
+			BondrewdLikesHisEmotes.getHandler().inject( channel );
+			
 			return interceptor;
 		} catch (IllegalArgumentException e) {
 			// Try again
@@ -395,23 +418,43 @@ public abstract class TinyProtocol {
 		Channel channel = channelLookup.get(player.getName());
 
 		// Lookup channel again
-		if (channel == null) {
+		if ( channel == null ) {
 			Object connection = getConnection.get(getPlayerHandle.invoke(player));
-			
 			Object manager = getManager.get(connection);
-			
-			channelLookup.put(player.getName(), channel = getChannel.get(manager));
+
+			channelLookup.put( player.getName(), channel = getChannel.get( manager ) );
+		}
+		if ( !uuidChannelLookup.containsKey( player.getUniqueId() ) ) {
+			uuidChannelLookup.put( player.getUniqueId(), channel );
 		}
 
 		return channel;
 	}
 	
-	public Channel getChannel( String playerName ) {
-		Channel channel = channelLookup.get( playerName );
+	/**
+	 * Retrieve the netty channel for async purposes
+	 * 
+	 * @param uuid
+	 * The uuid of the player
+	 * @param playerConnection
+	 * PlayerConnection object
+	 * @return
+	 * The Netty channel
+	 */
+	public Channel getChannel( UUID uuid, Object playerConnection ) {
+		Channel channel = uuidChannelLookup.get( uuid );
+		
+		if ( channel == null && playerConnection != null ) {
+			uuidChannelLookup.put( uuid, channel = getChannel.get( getManager.get( playerConnection ) ) );
+		}
 		
 		return channel;
 	}
 	
+	public void removeChannel( Player player ) {
+		uuidChannelLookup.remove( player.getUniqueId() );
+	}
+
 	/**
 	 * Uninject a specific player.
 	 * 
