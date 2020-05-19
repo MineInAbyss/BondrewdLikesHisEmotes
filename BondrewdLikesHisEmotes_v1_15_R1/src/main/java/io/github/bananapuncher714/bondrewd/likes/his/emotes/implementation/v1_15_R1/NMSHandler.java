@@ -5,6 +5,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.bukkit.Bukkit;
@@ -19,6 +20,7 @@ import io.github.bananapuncher714.bondrewd.likes.his.emotes.api.StringTransforme
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
@@ -39,7 +41,7 @@ import net.minecraft.server.v1_15_R1.ServerConnection;
 import net.minecraft.server.v1_15_R1.SkipEncodeException;
 
 public class NMSHandler implements PacketHandler {
-	private Map< Channel, PacketEncoder > encoder = new ConcurrentHashMap< Channel, PacketEncoder >();
+	private Map< Channel, ChannelHandler > encoder = new ConcurrentHashMap< Channel, ChannelHandler >();
 	private StringTransformer transformer;
 	
 	public NMSHandler() {
@@ -134,13 +136,22 @@ public class NMSHandler implements PacketHandler {
 	
 	private void uninject( Channel channel ) {
 		if ( encoder.containsKey( channel ) ) {
-			channel.pipeline().replace( CustomPacketEncoder.class, "encoder", encoder.remove( channel ) );
+			// Replace our custom packet encoder with the default one that the player had
+			ChannelHandler previousHandler = encoder.remove( channel );
+			if ( previousHandler instanceof PacketEncoder ) {
+				// PacketEncoder is not shareable, so we can't re-add it back. Instead, we'll have to create a new instance
+				channel.pipeline().replace( CustomPacketEncoder.class, "encoder", new PacketEncoder( EnumProtocolDirection.CLIENTBOUND ) );
+			} else {
+				channel.pipeline().replace( CustomPacketEncoder.class, "encoder", previousHandler );
+				
+			}
 		}
 	}
 	
 	private void inject( Channel channel ) {
 		if ( !encoder.containsKey( channel ) ) {
-			encoder.put( channel, channel.pipeline().replace( PacketEncoder.class, "encoder", new CustomPacketEncoder() ) );
+			// Replace the vanilla PacketEncoder with our own
+			encoder.put( channel, channel.pipeline().replace( "encoder", "encoder", new CustomPacketEncoder() ) );
 		}
 	}
 
