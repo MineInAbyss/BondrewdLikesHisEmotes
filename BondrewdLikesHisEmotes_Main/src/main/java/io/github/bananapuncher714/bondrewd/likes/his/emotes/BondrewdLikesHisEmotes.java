@@ -38,6 +38,7 @@ import com.google.gson.JsonSyntaxException;
 
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.api.PacketHandler;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.api.StringTransformer;
+import io.github.bananapuncher714.bondrewd.likes.his.emotes.dependencies.BondrewdExpansion;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.resourcepack.FontBitmap;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.resourcepack.FontIndex;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.resourcepack.NamespacedKey;
@@ -100,6 +101,13 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		} else {
 			getLogger().info( "Loaded emotes: " + String.join( " ", emotes.keySet() ) );
 		}
+		
+		// Register PlaceholderAPI with "emotes" namespace
+		if ( Bukkit.getPluginManager().getPlugin( "PlaceholderAPI" ) != null ) {
+			new BondrewdExpansion( this ).register();
+		} else {
+        	getLogger().info( "No PlaceholderAPI detected!" );
+        }
 	}
 
 	@Override
@@ -246,6 +254,13 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 			string = string.replace( "\\\\" + search, search );
 		}
 		return string;
+	}
+	
+	public String getEmoteFor( String identifier ) {
+		if ( emotes.containsKey( identifier ) ) {
+			return String.valueOf( emotes.get( identifier ) ); 
+		}
+		return null;
 	}
 
 	public static PacketHandler getHandler() {

@@ -24,5 +24,8 @@ Place the generated `/plugins/BondrewdLikesHisEmotes/default.json` file in the `
 - `/emote list` - List all the emotes that the player has permission for.
 - `/emote reload` - Reload the list of valid emotes
 
+### PlaceholderAPI
+In the cases where providing `:<emote>:` doesn't work, or you'd like to use it in a plugin, then you can use the PlaceholderAPI expansion with the namespace `%emote_<emote>%`.
+
 ### Additional info
 Note that it *is* possible for players to copy and paste the corresponding unicode character directly into chat and bypass permissions.
