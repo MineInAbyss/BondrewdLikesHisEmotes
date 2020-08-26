@@ -16,10 +16,12 @@ jobs:
     - uses: derongan/nmsaction@v1
       with:
         rev: 1.15.2
-    - run: cat $HOME/.m2/settings.xml
     - uses: derongan/nmsaction@v1
       with:
         rev: 1.16.1
+    - uses: derongan/nmsaction@v1
+      with:
+        rev: 1.16.2
     - name: Install nms into m2
       run: mkdir -p $HOME/.m2/repository && cp -a nms-build/.m2/repository/. $HOME/.m2/repository
     - name: Build with Maven
