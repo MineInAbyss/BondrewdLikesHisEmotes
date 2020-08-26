@@ -30,6 +30,11 @@
 			<artifactId>BondrewdLikesHisEmotes_v1_16_R1</artifactId>
 			<version>${master.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>io.github.bananapuncher714</groupId>
+			<artifactId>BondrewdLikesHisEmotes_v1_16_R2</artifactId>
+			<version>${master.version}</version>
+		</dependency>
 	</dependencies>
 
 	<build>
