@@ -5,12 +5,12 @@
 	<parent>
 		<groupId>io.github.bananapuncher714</groupId>
 		<artifactId>BondrewdLikesHisEmotes_Master</artifactId>
-		<version>1.0.7</version>
+		<version>1.0.8</version>
 	</parent>
 	<artifactId>BondrewdLikesHisEmotes</artifactId>
 
 	<properties>
-		<master.version>1.0.7</master.version>
+		<master.version>1.0.8</master.version>
 	</properties>
 
 	<dependencies>
@@ -33,6 +33,11 @@
 		<dependency>
 			<groupId>io.github.bananapuncher714</groupId>
 			<artifactId>BondrewdLikesHisEmotes_v1_16_R2</artifactId>
+			<version>${master.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.github.bananapuncher714</groupId>
+			<artifactId>BondrewdLikesHisEmotes_v1_16_R3</artifactId>
 			<version>${master.version}</version>
 		</dependency>
 	</dependencies>
