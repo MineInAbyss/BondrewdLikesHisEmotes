@@ -186,18 +186,32 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 					} );
 					
 					StringBuilder builder = new StringBuilder( ChatColor.WHITE + "Available emotes: " );
+					StringBuilder gifBuilder = new StringBuilder( ChatColor.WHITE + "Available gifs: ");
 					boolean found = false;
+					boolean foundGif = false;
 					for ( Emote emote : sortedEmotes ) {
 						if ( sender.hasPermission( "bondrewdemotes.emote." + emote.getId() ) ) {
-							builder.append( ":" );
-							builder.append( emote.getId() );
-							builder.append( ": " );
-							
-							found = true;
+							if ( emote.getFormatting().toLowerCase().contains( "k" ) ) {
+								gifBuilder.append( ":" );
+								gifBuilder.append( emote.getId() );
+								gifBuilder.append( ":" );
+								foundGif = true;
+							} else {
+								builder.append( ":" );
+								builder.append( emote.getId() );
+								builder.append( ": " );
+								found = true;
+							}
 						}
 					}
-					if ( found ) {
-						sender.sendMessage( builder.toString().trim() );
+					
+					if ( found || foundGif ) {
+						if ( found ) {
+							sender.sendMessage( builder.toString().trim() );
+						}
+						if ( foundGif ) {
+							sender.sendMessage( gifBuilder.toString().trim() );
+						}
 					} else {
 						sender.sendMessage( ChatColor.RED + "You cannot use any emotes!" );
 					}
