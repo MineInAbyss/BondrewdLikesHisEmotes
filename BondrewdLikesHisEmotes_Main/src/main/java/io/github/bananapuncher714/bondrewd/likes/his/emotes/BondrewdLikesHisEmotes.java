@@ -1,5 +1,6 @@
 package io.github.bananapuncher714.bondrewd.likes.his.emotes;
 
+import java.awt.Color;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -9,16 +10,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -29,7 +27,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerEditBookEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.meta.BookMeta;
-import org.bukkit.inventory.meta.BookMeta.Spigot;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.StringUtil;
@@ -46,6 +43,7 @@ import io.github.bananapuncher714.bondrewd.likes.his.emotes.resourcepack.Namespa
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.util.FileUtil;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.util.PermissionBuilder;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.util.ReflectionUtil;
+import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.HoverEvent.Action;
@@ -185,8 +183,8 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 						}
 					} );
 					
-					StringBuilder builder = new StringBuilder( ChatColor.WHITE + "Available emotes:\n" );
-					StringBuilder gifBuilder = new StringBuilder( ChatColor.WHITE + "Available GIFs:\n");
+					StringBuilder builder = new StringBuilder( ChatColor.of( new Color( 0x4abdff ) ) + "Available emotes:\n" );
+					StringBuilder gifBuilder = new StringBuilder( ChatColor.of( new Color( 0xf96854 ) ) + "Available GIFs:\n");
 					boolean found = false;
 					boolean foundGif = false;
 					for ( Emote emote : sortedEmotes ) {
