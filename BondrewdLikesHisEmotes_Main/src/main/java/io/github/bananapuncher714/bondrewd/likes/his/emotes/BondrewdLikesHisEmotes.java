@@ -192,7 +192,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 							if ( emote.getFormatting().toLowerCase().contains( "k" ) ) {
 								gifBuilder.append( ":" );
 								gifBuilder.append( emote.getId() );
-								gifBuilder.append( ":" );
+								gifBuilder.append( ": " );
 								foundGif = true;
 							} else {
 								builder.append( ":" );
