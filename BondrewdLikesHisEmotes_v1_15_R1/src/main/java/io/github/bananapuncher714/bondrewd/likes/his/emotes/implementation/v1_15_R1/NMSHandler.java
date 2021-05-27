@@ -5,7 +5,6 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.bukkit.Bukkit;
@@ -14,9 +13,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import com.google.gson.JsonElement;
+
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.BondrewdLikesHisEmotes;
+import io.github.bananapuncher714.bondrewd.likes.his.emotes.api.ComponentTransformer;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.api.PacketHandler;
-import io.github.bananapuncher714.bondrewd.likes.his.emotes.api.StringTransformer;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -25,9 +26,12 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelInitializer;
 import io.netty.handler.codec.MessageToByteEncoder;
+import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.chat.ComponentSerializer;
 import net.minecraft.server.v1_15_R1.EnumProtocol;
 import net.minecraft.server.v1_15_R1.EnumProtocolDirection;
 import net.minecraft.server.v1_15_R1.IChatBaseComponent;
+import net.minecraft.server.v1_15_R1.IChatBaseComponent.ChatSerializer;
 import net.minecraft.server.v1_15_R1.MinecraftServer;
 import net.minecraft.server.v1_15_R1.NBTBase;
 import net.minecraft.server.v1_15_R1.NBTTagCompound;
@@ -42,7 +46,7 @@ import net.minecraft.server.v1_15_R1.SkipEncodeException;
 
 public class NMSHandler implements PacketHandler {
 	private Map< Channel, ChannelHandler > encoder = new ConcurrentHashMap< Channel, ChannelHandler >();
-	private StringTransformer transformer;
+	private ComponentTransformer transformer;
 	
 	public NMSHandler() {
 		// Replacement for TinyProtocotocol, despite copying its channel initializers and whatnot
@@ -154,15 +158,15 @@ public class NMSHandler implements PacketHandler {
 			encoder.put( channel, channel.pipeline().replace( "encoder", "encoder", new CustomPacketEncoder() ) );
 		}
 	}
-
+	
 	@Override
-	public StringTransformer getTransformer() {
-		return transformer;
-	}
-
-	@Override
-	public void setTransformer( StringTransformer transformer ) {
+	public void setTransformer( ComponentTransformer transformer ) {
 		this.transformer = transformer;
+	}
+	
+	@Override
+	public ComponentTransformer getTransformer() {
+		return transformer;
 	}
 
 	private class CustomDataSerializer extends PacketDataSerializer {
@@ -171,9 +175,14 @@ public class NMSHandler implements PacketHandler {
 		}
 
 		@Override
-		public PacketDataSerializer a( IChatBaseComponent ichatbasecomponent ) {
-			// TODO Find some way to translate them?
-			return super.a( ichatbasecomponent );
+		public PacketDataSerializer a( IChatBaseComponent component ) {
+			JsonElement element = ChatSerializer.b( component );
+			BaseComponent[] components = ComponentSerializer.parse( element.toString() );
+			for ( int i = 0; i < components.length; i++ ) {
+				components[ i ] = transformer.transform( components[ i ] );
+			}
+			String json = ComponentSerializer.toString( components );
+			return super.a( ChatSerializer.a( json ) );
 		}
 		
 		@Override
@@ -181,7 +190,7 @@ public class NMSHandler implements PacketHandler {
 			if ( transformer != null ) {
 				s = transformer.transform( s );
 			}
-			return super.a( s, i);
+			return super.a( s, i );
 		}
 
 		@Override

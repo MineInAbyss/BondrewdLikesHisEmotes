@@ -3,7 +3,7 @@
   <parent>
     <groupId>io.github.bananapuncher714</groupId>
     <artifactId>BondrewdLikesHisEmotes_Master</artifactId>
-    <version>1.0.8</version>
+    <version>1.0.9</version>
   </parent>
   <artifactId>BondrewdLikesHisEmotes_v1_16_R1</artifactId>
   
@@ -17,7 +17,7 @@
 		<dependency>
 			<groupId>io.github.bananapuncher714</groupId>
 			<artifactId>BondrewdLikesHisEmotes_Main</artifactId>
-			<version>1.0.8</version>
+			<version>1.0.9</version>
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>

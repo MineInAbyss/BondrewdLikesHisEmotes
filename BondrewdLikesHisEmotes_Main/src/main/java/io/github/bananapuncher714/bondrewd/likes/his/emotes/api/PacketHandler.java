@@ -5,6 +5,6 @@ import org.bukkit.entity.Player;
 public interface PacketHandler {
 	void inject( Player player );
 	void uninject( Player player );
-	void setTransformer( StringTransformer transformer );
-	StringTransformer getTransformer();
+	void setTransformer( ComponentTransformer transformer );
+	ComponentTransformer getTransformer();
 }
