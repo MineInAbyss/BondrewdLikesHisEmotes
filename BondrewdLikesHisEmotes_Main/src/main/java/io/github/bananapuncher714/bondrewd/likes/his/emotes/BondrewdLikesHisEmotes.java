@@ -137,6 +137,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		if ( args.length == 1 ) {
 			if ( args[ 0 ].equalsIgnoreCase( "reload" ) ) {
 				if ( sender.hasPermission( "bondrewdemotes.reload" ) ) {
+					sender.sendMessage( "Reloading the emote config..." );
 					loadConfig();
 					loadPermissions();
 					sender.sendMessage( ChatColor.GREEN + "Done!" );
@@ -157,7 +158,6 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 						}
 					}
 					if ( found ) {
-						sender.sendMessage( "Found emotes..." );
 						sender.sendMessage( builder.toString().trim() );
 					} else {
 						sender.sendMessage( ChatColor.RED + "You cannot use any emotes!" );
@@ -241,7 +241,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 
 	private String transformString( String string ) {
 		for ( Emote emote : emotes ) {
-			String search = ":" + emote.getId() + ":";
+			String search = String.format( EMOTE_FORMAT, emote.getId() );
 			string = string.replaceAll( "(?<!\\\\)" + search, String.valueOf( emote.getChar() ) );
 			string = string.replace( "\\\\" + search, search );
 		}
