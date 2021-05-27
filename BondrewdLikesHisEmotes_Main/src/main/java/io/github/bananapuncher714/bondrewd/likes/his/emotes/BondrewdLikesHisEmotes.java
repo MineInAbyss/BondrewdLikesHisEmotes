@@ -7,11 +7,14 @@ import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.bukkit.Bukkit;
@@ -23,7 +26,10 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerEditBookEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.inventory.meta.BookMeta;
+import org.bukkit.inventory.meta.BookMeta.Spigot;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.StringUtil;
@@ -44,6 +50,7 @@ import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.HoverEvent.Action;
 import net.md_5.bungee.api.chat.TextComponent;
+import net.md_5.bungee.api.chat.TranslatableComponent;
 
 public class BondrewdLikesHisEmotes extends JavaPlugin {
 	// Could technically be 8, but it's small enough as it is so why not 11
@@ -73,19 +80,39 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 			public BaseComponent transform( BaseComponent component ) {
 				return transformComponent( component );
 			}
-			
+
 			@Override
-			public String transform( String string ) {
-				return transformString( string );
+			public String verifyFor( Player player, String string ) {
+				return verify( player, string );
 			}
-		} );
+			
+		});
 
 		Bukkit.getPluginManager().registerEvents( new Listener() {
 			@EventHandler
 			private void onEvent( PlayerJoinEvent event ) {
 				handler.inject( event.getPlayer() );
 			}
+			
+			@EventHandler
+			private void onEvent( PlayerEditBookEvent event ) {
+				if ( event.isSigning() ) {
+					BookMeta meta = event.getNewBookMeta();
+					List< BaseComponent[] > components = new ArrayList< BaseComponent[] >( meta.spigot().getPages() );
+					for ( BaseComponent[] componentArr : components ) {
+						for ( int i = 0; i < componentArr.length; i++ ) {
+							componentArr[ i ] = verify( event.getPlayer(), componentArr[ i ] );
+						}
+					}
+					meta.spigot().setPages( components );
+					event.setNewBookMeta( meta );
+				}
+			}
 		}, this );
+		
+		for ( Player player : Bukkit.getOnlinePlayers() ) {
+			handler.inject( player );
+		}
 		
 		FileUtil.saveToFile( getResource( "README.md" ), new File( getDataFolder() + "/" + "README.md" ), true );
 		FileUtil.saveToFile( getResource( "config.yml" ), new File( getDataFolder() + "/" + "config.yml" ), false );
@@ -146,9 +173,21 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 				}
 			} else if ( args[ 0 ].equalsIgnoreCase( "list" ) ) {
 				if ( sender.hasPermission( "bondrewdemotes.list" ) ) {
+					List< Emote > sortedEmotes = new ArrayList< Emote >( emotes );
+					
+					Collections.sort( sortedEmotes, new Comparator< Emote >() {
+						@Override
+						public int compare( Emote e1, Emote e2 ) {
+							if ( e1.getFormatting().toLowerCase().contains( "k" ) ^ e2.getFormatting().toLowerCase().contains( "k" ) ) {
+								return e1.getFormatting().toLowerCase().contains( "k" ) ? 1 : -1;
+							}
+							return e1.getId().toLowerCase().compareTo( e2.getId().toLowerCase() );
+						}
+					} );
+					
 					StringBuilder builder = new StringBuilder( ChatColor.WHITE + "Available emotes: " );
 					boolean found = false;
-					for ( Emote emote : emotes ) {
+					for ( Emote emote : sortedEmotes ) {
 						if ( sender.hasPermission( "bondrewdemotes.emote." + emote.getId() ) ) {
 							builder.append( ":" );
 							builder.append( emote.getId() );
@@ -231,7 +270,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		// Right now the emote permissions don't do anything apart from showing up in the list of emotes.
 		PermissionBuilder all = new PermissionBuilder( "bondrewdemotes.all" ).setDefault( PermissionDefault.OP );
 		for ( Emote emote : emotes ) {
-			all.addChild( new PermissionBuilder( "bondrewdemotes.emote." + emote.getId()).setDefault( PermissionDefault.OP ).register().build(), true );
+			all.addChild( new PermissionBuilder( "bondrewdemotes.emote." + emote.getId() ).setDefault( PermissionDefault.OP ).register().build(), true );
 		}
 
 		admin.addChild( all.register().build(), true ).register();
@@ -250,12 +289,19 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 	
 	private BaseComponent transformComponent( BaseComponent component ) {
 		List< BaseComponent > subComponents = new LinkedList< BaseComponent >();
+		
+		HoverEvent hover = component.getHoverEvent();
+		if ( hover != null ) {
+			BaseComponent[] hoverComps = hover.getValue();
+			for ( int i = 0; i < hoverComps.length; i++ ) {
+				hoverComps[ i ] = transformComponent( hoverComps[ i ] );
+			}
+			hover = new HoverEvent( hover.getAction(), hoverComps );
+			component.setHoverEvent( hover );
+		}
+		
 		if ( component instanceof TextComponent ) {
 			TextComponent text = ( TextComponent ) component;
-			TextComponent emptyCopy = text.duplicate();
-			if ( emptyCopy.getExtra() != null ) {
-				emptyCopy.getExtra().clear();
-			}
 			
 			List< TextComponent > components = new LinkedList< TextComponent >();
 			components.add( text );
@@ -267,10 +313,10 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 					String[] split = val.split( "(?<!\\\\)" + key, -1 );
 					if ( split.length > 1 ) {
 						for ( int i = 0; i < split.length; i++ ) {
-							String sub = split[ i ];
+							String sub = split[ i ].replace( "\\" + key, key );
 							if ( !sub.isEmpty() ) {
-								TextComponent subText = emptyCopy.duplicate();
-								subText.setText( sub );
+								TextComponent subText = new TextComponent( sub );
+								subText.copyFormatting( text );
 								temp.add( subText );
 							}
 							
@@ -304,10 +350,10 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 								emoteComp.setColor( net.md_5.bungee.api.ChatColor.WHITE );
 								emoteComp.setFont( emote.getFont() );
 								
-								if ( component.getHoverEvent() != null ) {
-									emoteComp.setHoverEvent( component.getHoverEvent() );
+								if ( hover != null ) {
+									emoteComp.setHoverEvent( hover );
 								} else {
-									TextComponent hoverComp = new TextComponent( "\\" + key );
+									TextComponent hoverComp = new TextComponent( key );
 									emoteComp.setHoverEvent( new HoverEvent( Action.SHOW_TEXT, new BaseComponent[] { hoverComp } ) );
 								}
 								
@@ -319,6 +365,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 							}
 						}
 					} else {
+						comp.setText( comp.getText().replace( "\\" + key, key ) );
 						temp.add( comp );
 					}
 				}
@@ -329,6 +376,15 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 			if ( !components.isEmpty() ) {
 				component = components.remove( 0 );
 				subComponents.addAll( components );
+			}
+		} else if ( component instanceof TranslatableComponent ) {
+			TranslatableComponent translate = ( TranslatableComponent ) component;
+			if ( translate.getWith() != null ) {
+				List< BaseComponent > newWith = new ArrayList< BaseComponent >();
+				for ( BaseComponent with : translate.getWith() ) {
+					newWith.add( transformComponent( with ) );
+				}
+				translate.setWith( newWith );
 			}
 		}
 		
@@ -342,6 +398,34 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		}
 		
 		return component;
+	}
+	
+	public BaseComponent verify( Player player, BaseComponent component ) {
+		if ( component instanceof TextComponent ) {
+			TextComponent text = ( TextComponent ) component;
+			text.setText( verify( player, text.getText() ) );
+		} else if ( component instanceof TranslatableComponent ) {
+			TranslatableComponent translate = ( TranslatableComponent ) component;
+			if ( translate.getWith() != null ) {
+				translate.getWith().parallelStream().forEach( ex -> verify( player, ex ) );
+			}
+		}
+		
+		if ( component.getExtra() != null ) {
+			component.getExtra().parallelStream().forEach( ex -> verify( player, ex ) );
+		}
+		
+		return component;
+	}
+	
+	private String verify( Player player, String string ) {
+		for ( Emote emote : emotes ) {
+			if ( !player.hasPermission( "bondrewdemotes.emote." + emote.getId() ) ) {
+				String search = String.format( EMOTE_FORMAT, emote.getId() );
+				string = string.replace( search, "\\" + search );
+			}
+		}
+		return string;
 	}
 	
 	private Emote parseEmoteFrom( String string ) {
