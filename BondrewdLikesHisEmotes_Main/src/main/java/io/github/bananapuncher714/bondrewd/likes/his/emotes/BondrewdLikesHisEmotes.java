@@ -185,8 +185,8 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 						}
 					} );
 					
-					StringBuilder builder = new StringBuilder( ChatColor.WHITE + "Available emotes: " );
-					StringBuilder gifBuilder = new StringBuilder( ChatColor.WHITE + "Available gifs: ");
+					StringBuilder builder = new StringBuilder( ChatColor.WHITE + "Available emotes:\n" );
+					StringBuilder gifBuilder = new StringBuilder( ChatColor.WHITE + "Available GIFs:\n");
 					boolean found = false;
 					boolean foundGif = false;
 					for ( Emote emote : sortedEmotes ) {
@@ -208,6 +208,9 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 					if ( found || foundGif ) {
 						if ( found ) {
 							sender.sendMessage( builder.toString().trim() );
+						}
+						if ( found && foundGif ) {
+							sender.sendMessage( "" );
 						}
 						if ( foundGif ) {
 							sender.sendMessage( gifBuilder.toString().trim() );
