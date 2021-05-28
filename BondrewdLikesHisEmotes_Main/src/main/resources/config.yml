@@ -2,6 +2,10 @@
 default-height: 11
 default-ascent: 9
 
+messages:
+  no-emote: ""
+  no-gif: "&cGIFs are reserved for the server's Patreon supporters."
+
 # Format is "[<font>|]name[&<KLMNO>] [namespace] [height ascent]"
 # name is the title of the emote in-game. They should only contain [a-zA-Z0-9_]
 # namespace is the relative path starting from the /assets/minecraft/textures/ folder. It is emotes/<emote>.png by default.

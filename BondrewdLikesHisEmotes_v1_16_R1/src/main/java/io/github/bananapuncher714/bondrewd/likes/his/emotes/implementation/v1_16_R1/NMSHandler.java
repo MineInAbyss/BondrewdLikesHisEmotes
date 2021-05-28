@@ -6,8 +6,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.WeakHashMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -54,9 +54,8 @@ import net.minecraft.server.v1_16_R1.ServerConnection;
 import net.minecraft.server.v1_16_R1.SkipEncodeException;
 
 public class NMSHandler implements PacketHandler {
-	private Map< Channel, ChannelHandler > encoder = new ConcurrentHashMap< Channel, ChannelHandler >();
-	private Map< Channel, ChannelHandler > decoder = new ConcurrentHashMap< Channel, ChannelHandler >();
-	private Map< Channel, Player > playerMap = Collections.synchronizedMap( new WeakHashMap< Channel, Player >() );
+	private Map< Channel, ChannelHandler > encoder = Collections.synchronizedMap( new WeakHashMap< Channel, ChannelHandler >() );
+	private Map< Channel, ChannelHandler > decoder = Collections.synchronizedMap( new WeakHashMap< Channel, ChannelHandler >() );
 	private ComponentTransformer transformer;
 	private JsonParser parser = new JsonParser();
 	
@@ -146,11 +145,17 @@ public class NMSHandler implements PacketHandler {
 		NetworkManager manager = conn.networkManager;
 		Channel channel = manager.channel;
 		
-		
 		if ( channel != null ) {
-			playerMap.put( channel, player );
-			
 			inject( channel );
+			
+			for ( Entry< String, ChannelHandler > entry : channel.pipeline() ) {
+				ChannelHandler handler = entry.getValue();
+				if ( handler instanceof CustomPacketEncoder ) {
+					( ( CustomPacketEncoder ) handler ).setPlayer( player );
+				} else if ( handler instanceof CustomPacketDecoder ) {
+					( ( CustomPacketDecoder ) handler ).setPlayer( player );
+				}
+			}
 		}
 	}
 
@@ -162,8 +167,6 @@ public class NMSHandler implements PacketHandler {
 		
 		if ( channel != null ) {
 			uninject( channel );
-			
-			playerMap.remove( channel );
 		}
 	}
 	
@@ -192,12 +195,18 @@ public class NMSHandler implements PacketHandler {
 	private void inject( Channel channel ) {
 		if ( !encoder.containsKey( channel ) ) {
 			// Replace the vanilla PacketEncoder with our own
-			encoder.put( channel, channel.pipeline().replace( "encoder", "encoder", new CustomPacketEncoder( channel ) ) );
+			ChannelHandler handler = channel.pipeline().get( "encoder" );
+			if ( !( handler instanceof CustomPacketEncoder ) ) {
+				encoder.put( channel, channel.pipeline().replace( "encoder", "encoder", new CustomPacketEncoder() ) );
+			}
 		}
 		
 		if ( !decoder.containsKey( channel ) ) {
 			// Replace the vanilla PacketDecoder with our own
-			decoder.put( channel, channel.pipeline().replace( "decoder", "decoder", new CustomPacketDecoder( channel ) ) );
+			ChannelHandler handler = channel.pipeline().get( "decoder" );
+			if ( !( handler instanceof CustomPacketDecoder ) ) {
+				decoder.put( channel, channel.pipeline().replace( "decoder", "decoder", new CustomPacketDecoder() ) );
+			}
 		}
 	}
 
@@ -317,11 +326,7 @@ public class NMSHandler implements PacketHandler {
 
 	private class CustomPacketEncoder extends MessageToByteEncoder< Packet< ? > > {
 		private EnumProtocolDirection protocolDirection = EnumProtocolDirection.CLIENTBOUND;
-		private Channel channel;
-		
-		protected CustomPacketEncoder( Channel channel ) {
-			this.channel = channel;
-		}
+		private Player player;
 		
 		@Override
 		protected void encode( ChannelHandlerContext var0, Packet< ? > var1, ByteBuf var2 ) throws Exception {
@@ -335,7 +340,7 @@ public class NMSHandler implements PacketHandler {
 				throw new IOException( "Can't serialize unregistered packet" );
 			}
 
-			PacketDataSerializer var5 = new CustomDataSerializer( () -> playerMap.get( channel ), var2 );
+			PacketDataSerializer var5 = new CustomDataSerializer( () -> player, var2 );
 			var5.d( var4.intValue() );
 
 			try {
@@ -347,17 +352,17 @@ public class NMSHandler implements PacketHandler {
 					throw new SkipEncodeException( var6 );
 				}
 				throw var6;
-			} 
+			}
+		}
+		
+		protected void setPlayer( Player player ) {
+			this.player = player;
 		}
 	}
 	
 	private class CustomPacketDecoder extends ByteToMessageDecoder {
 		private EnumProtocolDirection protocolDirection = EnumProtocolDirection.SERVERBOUND;
-		private Channel channel;
-		
-		protected CustomPacketDecoder( Channel channel ) {
-			this.channel = channel;
-		}
+		private Player player;
 		
 		@Override
 		protected void decode( ChannelHandlerContext var0, ByteBuf var1, List< Object > var2 ) throws Exception {
@@ -365,7 +370,7 @@ public class NMSHandler implements PacketHandler {
 				return;
 			}
 
-			PacketDataSerializer var3 = new CustomDataSerializer( () -> playerMap.get( channel ), var1 );
+			PacketDataSerializer var3 = new CustomDataSerializer( () -> player, var1 );
 			int var4 = var3.i();
 			Packet< ? > var5 = ( ( EnumProtocol ) var0.channel().attr( NetworkManager.c ).get() ).a( this.protocolDirection, var4 );
 
@@ -378,6 +383,10 @@ public class NMSHandler implements PacketHandler {
 				throw new IOException( "Packet " + ( ( EnumProtocol )var0.channel().attr(NetworkManager.c).get()).a() + "/" + var4 + " (" + var5.getClass().getSimpleName() + ") was larger than I expected, found " + var3.readableBytes() + " bytes extra whilst reading packet " + var4 );
 			}
 			var2.add(var5);
+		}
+		
+		protected void setPlayer( Player player ) {
+			this.player = player;
 		}
 	}
 }

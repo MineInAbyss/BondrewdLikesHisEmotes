@@ -34,6 +34,7 @@ import org.bukkit.util.StringUtil;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import de.themoep.minedown.MineDown;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.api.ComponentTransformer;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.api.PacketHandler;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.dependencies.BondrewdExpansion;
@@ -61,6 +62,9 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 	
 	private PacketHandler handler;
 	private List< Emote > emotes = new ArrayList< Emote >();
+	
+	private BaseComponent[] noEmoteMessage;
+	private BaseComponent[] noGifMessage;
 	
 	@Override
 	public void onEnable() {
@@ -234,6 +238,19 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		EMOTE_HEIGHT = config.getInt( "default-height" );
 		EMOTE_ASCENT = config.getInt( "default-ascent" );
 		
+		String noEmoteMessageString = config.getString( "messages.no-emote" );
+		if ( noEmoteMessageString != null && !noEmoteMessageString.isEmpty() ) {
+			noEmoteMessage = MineDown.parse( noEmoteMessageString );
+		} else {
+			noEmoteMessage = null;
+		}
+		String noGifMessageString = config.getString( "messages.no-gif" );
+		if ( noGifMessageString != null && !noGifMessageString.isEmpty() ) {
+			noGifMessage = MineDown.parse( noGifMessageString );
+		} else {
+			noGifMessage = null;
+		}
+		
 		emotes.clear();
 		Map< String, FontIndex > fonts = new HashMap< String, FontIndex >();
 		
@@ -293,15 +310,6 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		admin.addChild( new PermissionBuilder( "bondrewdemotes.list" ).setDefault( PermissionDefault.TRUE ).register().build(), true );
 	}
 
-	private String transformString( String string ) {
-		for ( Emote emote : emotes ) {
-			String search = String.format( EMOTE_FORMAT, emote.getId() );
-			string = string.replaceAll( "(?<!\\\\)" + search, String.valueOf( emote.getChar() ) );
-			string = string.replace( "\\\\" + search, search );
-		}
-		return string;
-	}
-	
 	private BaseComponent transformComponent( BaseComponent component ) {
 		List< BaseComponent > subComponents = new LinkedList< BaseComponent >();
 		
@@ -434,12 +442,31 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 	}
 	
 	private String verify( Player player, String string ) {
+		boolean noEmote = false;
+		boolean noGif = false;
 		for ( Emote emote : emotes ) {
 			if ( !player.hasPermission( "bondrewdemotes.emote." + emote.getId() ) ) {
 				String search = String.format( EMOTE_FORMAT, emote.getId() );
-				string = string.replace( search, "\\" + search );
+				String replaced = string.replace( search, "\\" + search );
+				if ( !string.equals( replaced ) ) {
+					if ( emote.getFormatting().toLowerCase().contains( "k" ) ) {
+						noGif = true;
+					} else {
+						noEmote = true;
+					}
+				}
+				string = replaced;
 			}
 		}
+		
+		if ( noEmote && noEmoteMessage != null ) {
+			Bukkit.getScheduler().runTask( this, () -> player.spigot().sendMessage( noEmoteMessage ) );
+		}
+		
+		if ( noGif && noGifMessage != null ) {
+			Bukkit.getScheduler().runTask( this, () -> player.spigot().sendMessage( noGifMessage ) );
+		}
+		
 		return string;
 	}
 	
