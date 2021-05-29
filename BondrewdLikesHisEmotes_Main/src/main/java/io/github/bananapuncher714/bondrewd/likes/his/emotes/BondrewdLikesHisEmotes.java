@@ -55,8 +55,8 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 	// Could technically be 8, but it's small enough as it is so why not 11
 	private static int EMOTE_HEIGHT = 11;
 	private static int EMOTE_ASCENT = 9;
+	private static String DEFAULT_NAMESPACE = "emotes/";
 	private static final char STARTING_CHAR = '\uEBAF';
-	private static final String DEFAULT_NAMESPACE = "emotes/";
 	private static final String EMOTE_FORMAT = ":%s:";
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	
@@ -237,6 +237,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		
 		EMOTE_HEIGHT = config.getInt( "default-height" );
 		EMOTE_ASCENT = config.getInt( "default-ascent" );
+		DEFAULT_NAMESPACE = config.getString( "default-namespace" );
 		
 		String noEmoteMessageString = config.getString( "messages.no-emote" );
 		if ( noEmoteMessageString != null && !noEmoteMessageString.isEmpty() ) {
@@ -269,7 +270,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 			parsedEmote.setChar( ( char ) c );
 			emotes.add( parsedEmote );
 			
-			FontBitmap provider = new FontBitmap( new NamespacedKey( parsedEmote.getNamespace() ), new String[] { String.valueOf( ( char ) c ) } );
+			FontBitmap provider = new FontBitmap( NamespacedKey.fromString( parsedEmote.getNamespace() ), new String[] { String.valueOf( ( char ) c ) } );
 			provider.setHeight( parsedEmote.getHeight() );
 			provider.setAscent( parsedEmote.getAscent() );
 			index.addProvider( provider );
