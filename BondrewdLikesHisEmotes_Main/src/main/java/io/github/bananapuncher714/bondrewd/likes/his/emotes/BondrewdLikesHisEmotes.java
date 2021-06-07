@@ -55,7 +55,8 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 	// Could technically be 8, but it's small enough as it is so why not 11
 	private static int EMOTE_HEIGHT = 11;
 	private static int EMOTE_ASCENT = 9;
-	private static String DEFAULT_NAMESPACE = "emotes/";
+	private static String DEFAULT_NAMESPACE = "minecraft";
+	private static String DEFAULT_FOLDER = "emotes/";
 	private static final char STARTING_CHAR = '\uEBAF';
 	private static final String EMOTE_FORMAT = ":%s:";
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -237,7 +238,8 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		
 		EMOTE_HEIGHT = config.getInt( "default-height" );
 		EMOTE_ASCENT = config.getInt( "default-ascent" );
-		DEFAULT_NAMESPACE = config.getString( "default-namespace" );
+		DEFAULT_NAMESPACE = config.getString( "default-namespace", "minecraft" );
+		DEFAULT_FOLDER = config.getString( "default-folder", "emotes/" );
 		
 		String noEmoteMessageString = config.getString( "messages.no-emote" );
 		if ( noEmoteMessageString != null && !noEmoteMessageString.isEmpty() ) {
@@ -502,7 +504,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		if ( split.length > 1 ) {
 			emote.setNamespace( split[ 1 ] );
 		} else {
-			emote.setNamespace( DEFAULT_NAMESPACE + emote.id + ".png" );
+			emote.setNamespace( DEFAULT_NAMESPACE + ":" + DEFAULT_FOLDER + "/" + emote.id + ".png" );
 		}
 		
 		if ( split.length > 3 ) {
