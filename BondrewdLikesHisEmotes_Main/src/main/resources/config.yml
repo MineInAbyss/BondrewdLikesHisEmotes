@@ -5,6 +5,7 @@ default-ascent: 9
 # Default namespace for the emotes, normally the path is <namespace>:<folder><emote>.png
 default-namespace: "minecraft"
 default-folder: "emotes"
+default-font: "emote"
 
 messages:
   no-emote: ""

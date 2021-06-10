@@ -57,6 +57,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 	private static int EMOTE_ASCENT = 9;
 	private static String DEFAULT_NAMESPACE = "minecraft";
 	private static String DEFAULT_FOLDER = "emotes/";
+	private static String DEFAULT_FONT = "emote";
 	private static final char STARTING_CHAR = '\uEBAF';
 	private static final String EMOTE_FORMAT = ":%s:";
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -240,6 +241,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		EMOTE_ASCENT = config.getInt( "default-ascent" );
 		DEFAULT_NAMESPACE = config.getString( "default-namespace", "minecraft" );
 		DEFAULT_FOLDER = config.getString( "default-folder", "emotes/" );
+		DEFAULT_FONT = config.getString( "default-font", "default" );
 		
 		String noEmoteMessageString = config.getString( "messages.no-emote" );
 		if ( noEmoteMessageString != null && !noEmoteMessageString.isEmpty() ) {
@@ -492,7 +494,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		if ( fontSplit.length > 1 ) {
 			emote.setFont( fontSplit[ 0 ] );
 		} else {
-			emote.setFont( "default" );
+			emote.setFont( DEFAULT_FONT );
 		}
 		
 		if ( formatSplit.length > 1 ) {
