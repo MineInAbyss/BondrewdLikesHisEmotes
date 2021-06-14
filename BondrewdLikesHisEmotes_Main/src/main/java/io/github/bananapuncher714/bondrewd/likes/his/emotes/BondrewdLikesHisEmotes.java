@@ -46,6 +46,7 @@ import io.github.bananapuncher714.bondrewd.likes.his.emotes.util.PermissionBuild
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.util.ReflectionUtil;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.ClickEvent;
 import net.md_5.bungee.api.chat.HoverEvent;
 import net.md_5.bungee.api.chat.HoverEvent.Action;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -319,6 +320,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		List< BaseComponent > subComponents = new LinkedList< BaseComponent >();
 		
 		HoverEvent hover = component.getHoverEvent();
+		ClickEvent click = component.getClickEvent();
 		if ( hover != null ) {
 			BaseComponent[] hoverComps = hover.getValue();
 			for ( int i = 0; i < hoverComps.length; i++ ) {
@@ -378,15 +380,9 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 								emoteComp.setColor( net.md_5.bungee.api.ChatColor.WHITE );
 								emoteComp.setFont( emote.getFont() );
 								
-								if ( hover != null ) {
-									emoteComp.setHoverEvent( hover );
-								} else {
+								if ( hover == null ) {
 									TextComponent hoverComp = new TextComponent( key );
 									emoteComp.setHoverEvent( new HoverEvent( Action.SHOW_TEXT, new BaseComponent[] { hoverComp } ) );
-								}
-								
-								if ( component.getClickEvent() != null ) {
-									emoteComp.setClickEvent( component.getClickEvent() );
 								}
 								
 								temp.add( emoteComp );
@@ -401,10 +397,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 				components = temp;
 			}
 			
-			if ( !components.isEmpty() ) {
-				component = components.remove( 0 );
-				subComponents.addAll( components );
-			}
+			subComponents.addAll( components );
 		} else if ( component instanceof TranslatableComponent ) {
 			TranslatableComponent translate = ( TranslatableComponent ) component;
 			if ( translate.getWith() != null ) {
@@ -414,15 +407,36 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 				}
 				translate.setWith( newWith );
 			}
+			subComponents.add( component );
+		} else {
+			subComponents.add( component );
 		}
 		
+		List< BaseComponent > extra = null;
 		if ( component.getExtra() != null ) {
+			extra = new LinkedList< BaseComponent >();
 			for ( BaseComponent comp : component.getExtra() ) {
-				subComponents.add( transformComponent( comp ) );
+				extra.add( transformComponent( comp ) );
 			}
+			
+			component.setExtra( new ArrayList< BaseComponent >() );
 		}
-		if ( !subComponents.isEmpty() ) {
+		
+		if ( subComponents.size() > 1 ) {
+			if ( extra != null && !extra.isEmpty() ) {
+				TextComponent extraComp = new TextComponent( "" );
+				extraComp.setExtra( extra );
+				subComponents.add( extraComp );
+			}
+			component = new TextComponent( "" );
+			component.setHoverEvent( hover );
+			component.setClickEvent( click );
 			component.setExtra( subComponents );
+		} else {
+			component = subComponents.get( 0 );
+			if ( extra != null && !extra.isEmpty() ) {
+				component.setExtra( extra );
+			}
 		}
 		
 		return component;
