@@ -239,6 +239,7 @@ public class NMSHandler implements PacketHandler {
 				components[ i ] = transformer.transform( components[ i ] );
 			}
 			String json = ComponentSerializer.toString( components );
+			System.out.println( "Decoding " + json );
 			return super.a( ChatSerializer.a( json ) );
 		}
 		
@@ -318,7 +319,7 @@ public class NMSHandler implements PacketHandler {
 			if ( compound != null ) {
 				Player player = supplier.get();
 				if ( player != null ) {
-//					transform( compound, val -> transformer.verifyFor( player, val ) );
+					transform( compound, val -> transformer.verifyFor( player, val ) );
 				}
 			}
 			
@@ -380,7 +381,6 @@ public class NMSHandler implements PacketHandler {
 				throw new IOException("Bad packet id " + var4);
 			}
 			
-			var5.a( var3 );
 			if ( var3.readableBytes() > 0 ) {
 				throw new IOException( "Packet " + ( ( EnumProtocol )var0.channel().attr(NetworkManager.c).get()).a() + "/" + var4 + " (" + var5.getClass().getSimpleName() + ") was larger than I expected, found " + var3.readableBytes() + " bytes extra whilst reading packet " + var4 );
 			}
