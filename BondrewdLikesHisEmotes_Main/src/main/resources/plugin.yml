@@ -3,8 +3,6 @@ main: io.github.bananapuncher714.bondrewd.likes.his.emotes.BondrewdLikesHisEmote
 version: 1.0.10
 description: Custom emote translater for Mine in Abyss
 api-version: 1.13
-loadbefore:
-- "ViaVersion"
 softdepend:
 - "PlaceholderAPI"
 commands:

@@ -1,7 +1,9 @@
 package io.github.bananapuncher714.bondrewd.likes.his.emotes.implementation.v1_17_R1;
 
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -178,18 +180,18 @@ public class NMSHandler implements PacketHandler {
 			ChannelHandler previousHandler = encoder.remove( channel );
 			if ( previousHandler instanceof PacketEncoder ) {
 				// PacketEncoder is not shareable, so we can't re-add it back. Instead, we'll have to create a new instance
-				channel.pipeline().replace( CustomPacketEncoder.class, "encoder", new PacketEncoder( EnumProtocolDirection.b ) );
+				channel.pipeline().replace( "encoder", "encoder", new PacketEncoder( EnumProtocolDirection.b ) );
 			} else {
-				channel.pipeline().replace( CustomPacketEncoder.class, "encoder", previousHandler );
+				channel.pipeline().replace( "encoder", "encoder", previousHandler );
 			}
 		}
 		
 		if ( decoder.containsKey( channel ) ) {
 			ChannelHandler previousHandler = decoder.remove( channel );
 			if ( previousHandler instanceof PacketDecoder ) {
-				channel.pipeline().replace( CustomPacketDecoder.class, "decoder", new PacketDecoder( EnumProtocolDirection.a ) );
+				channel.pipeline().replace( "decoder", "decoder", new PacketDecoder( EnumProtocolDirection.a ) );
 			} else {
-				channel.pipeline().replace( CustomPacketDecoder.class, "decoder", previousHandler );
+				channel.pipeline().replace( "decoder", "decoder", previousHandler );
 			}
 		}
 	}
@@ -199,7 +201,20 @@ public class NMSHandler implements PacketHandler {
 			// Replace the vanilla PacketEncoder with our own
 			ChannelHandler handler = channel.pipeline().get( "encoder" );
 			if ( !( handler instanceof CustomPacketEncoder ) ) {
-				encoder.put( channel, channel.pipeline().replace( "encoder", "encoder", new CustomPacketEncoder() ) );
+				if ( handler.getClass().getName().equals( "com.viaversion.viaversion.bukkit.handlers.BukkitEncodeHandler" ) ) {
+					try {
+						Class< ? > clazz = handler.getClass();
+						Field info = clazz.getDeclaredField( "info" );
+						info.setAccessible( true );
+						Constructor< ? > cons = clazz.getConstructor( info.getType(), MessageToByteEncoder.class );
+						Object viaEncoder = cons.newInstance( info.get( handler ), new CustomPacketEncoder() );
+						encoder.put( channel, channel.pipeline().replace( "encoder", "encoder", ( MessageToByteEncoder< ? > ) viaEncoder ) );
+					} catch ( NoSuchFieldException | SecurityException | NoSuchMethodException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e ) {
+						e.printStackTrace();
+					}
+				} else {
+					encoder.put( channel, channel.pipeline().replace( "encoder", "encoder", new CustomPacketEncoder() ) );
+				}
 			}
 		}
 		
@@ -207,7 +222,20 @@ public class NMSHandler implements PacketHandler {
 			// Replace the vanilla PacketDecoder with our own
 			ChannelHandler handler = channel.pipeline().get( "decoder" );
 			if ( !( handler instanceof CustomPacketDecoder ) ) {
-				decoder.put( channel, channel.pipeline().replace( "decoder", "decoder", new CustomPacketDecoder() ) );
+				if ( handler.getClass().getName().equals( "com.viaversion.viaversion.bukkit.handlers.BukkitDecodeHandler" ) ) {
+					try {
+						Class< ? > clazz = handler.getClass();
+						Field info = clazz.getDeclaredField( "info" );
+						info.setAccessible( true );
+						Constructor< ? > cons = clazz.getConstructor( info.getType(), ByteToMessageDecoder.class );
+						Object viaDecoder = cons.newInstance( info.get( handler ), new CustomPacketDecoder() );
+						decoder.put( channel, channel.pipeline().replace( "decoder", "decoder", ( ByteToMessageDecoder ) viaDecoder ) );
+					} catch ( NoSuchFieldException | SecurityException | NoSuchMethodException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e ) {
+						e.printStackTrace();
+					}
+				} else {
+					decoder.put( channel, channel.pipeline().replace( "decoder", "decoder", new CustomPacketDecoder() ) );
+				}
 			}
 		}
 	}
