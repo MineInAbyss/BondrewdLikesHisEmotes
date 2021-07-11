@@ -239,7 +239,6 @@ public class NMSHandler implements PacketHandler {
 				components[ i ] = transformer.transform( components[ i ] );
 			}
 			String json = ComponentSerializer.toString( components );
-			System.out.println( "Decoding " + json );
 			return super.a( ChatSerializer.a( json ) );
 		}
 		
