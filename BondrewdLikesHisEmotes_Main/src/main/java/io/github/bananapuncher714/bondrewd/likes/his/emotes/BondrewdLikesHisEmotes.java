@@ -83,7 +83,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		handler.setTransformer( new ComponentTransformer() {
 			@Override
 			public BaseComponent transform( BaseComponent component ) {
-				return transformComponent( component );
+				return transformComponent( component, true );
 			}
 
 			@Override
@@ -315,8 +315,12 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		admin.addChild( new PermissionBuilder( "bondrewdemotes.reload" ).setDefault( PermissionDefault.OP ).register().build(), true );
 		admin.addChild( new PermissionBuilder( "bondrewdemotes.list" ).setDefault( PermissionDefault.TRUE ).register().build(), true );
 	}
-
+	
 	public BaseComponent transformComponent( BaseComponent component ) {
+		return transformComponent( component, false );
+	}
+
+	private BaseComponent transformComponent( BaseComponent component, boolean full ) {
 		List< BaseComponent > subComponents = new LinkedList< BaseComponent >();
 		
 		HoverEvent hover = component.getHoverEvent();
@@ -324,7 +328,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		if ( hover != null ) {
 			BaseComponent[] hoverComps = hover.getValue();
 			for ( int i = 0; i < hoverComps.length; i++ ) {
-				hoverComps[ i ] = transformComponent( hoverComps[ i ] );
+				hoverComps[ i ] = transformComponent( hoverComps[ i ], full );
 			}
 			hover = new HoverEvent( hover.getAction(), hoverComps );
 			component.setHoverEvent( hover );
@@ -380,7 +384,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 								emoteComp.setColor( net.md_5.bungee.api.ChatColor.WHITE );
 								emoteComp.setFont( emote.getFont() );
 								
-								if ( hover == null ) {
+								if ( hover == null && full ) {
 									TextComponent hoverComp = new TextComponent( key );
 									emoteComp.setHoverEvent( new HoverEvent( Action.SHOW_TEXT, new BaseComponent[] { hoverComp } ) );
 								}
@@ -389,7 +393,9 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 							}
 						}
 					} else {
-						comp.setText( comp.getText().replace( "\\" + key, key ) );
+						if ( full ) {
+							comp.setText( comp.getText().replace( "\\" + key, key ) );
+						}
 						temp.add( comp );
 					}
 				}
@@ -403,7 +409,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 			if ( translate.getWith() != null ) {
 				List< BaseComponent > newWith = new ArrayList< BaseComponent >();
 				for ( BaseComponent with : translate.getWith() ) {
-					newWith.add( transformComponent( with ) );
+					newWith.add( transformComponent( with, full ) );
 				}
 				translate.setWith( newWith );
 			}
@@ -416,7 +422,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		if ( component.getExtra() != null ) {
 			extra = new LinkedList< BaseComponent >();
 			for ( BaseComponent comp : component.getExtra() ) {
-				extra.add( transformComponent( comp ) );
+				extra.add( transformComponent( comp, full ) );
 			}
 			
 			component.setExtra( new ArrayList< BaseComponent >() );
