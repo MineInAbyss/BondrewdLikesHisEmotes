@@ -316,7 +316,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		admin.addChild( new PermissionBuilder( "bondrewdemotes.list" ).setDefault( PermissionDefault.TRUE ).register().build(), true );
 	}
 
-	private BaseComponent transformComponent( BaseComponent component ) {
+	public BaseComponent transformComponent( BaseComponent component ) {
 		List< BaseComponent > subComponents = new LinkedList< BaseComponent >();
 		
 		HoverEvent hover = component.getHoverEvent();

@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -26,6 +27,7 @@ import com.google.gson.JsonParser;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.BondrewdLikesHisEmotes;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.api.ComponentTransformer;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.api.PacketHandler;
+import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -38,7 +40,6 @@ import io.netty.handler.codec.MessageToByteEncoder;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.chat.ComponentSerializer;
 import net.minecraft.nbt.NBTBase;
-import net.minecraft.nbt.NBTReadLimiter;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagString;
@@ -104,14 +105,40 @@ public class NMSHandler implements PacketHandler {
 		ChannelInitializer< Channel > beginInitProtocol = new ChannelInitializer< Channel >() {
 			@Override
 			protected void initChannel( Channel channel ) throws Exception {
-				channel.pipeline().addLast(endInitProtocol);
+				ChannelHandler handler = null;
+				for ( Entry< String, ChannelHandler > entry : channel.pipeline() ) {
+					if ( entry.getValue().getClass().getName().equals( "com.viaversion.viaversion.bukkit.handlers.BukkitChannelInitializer" ) ) {
+						handler = entry.getValue();
+					}
+				}
+				
+				if ( handler == null ) {
+					channel.pipeline().addLast( endInitProtocol );
+				} else {
+					// Urrrgh Viaversion...
+					Class< ? > clazz = handler.getClass();
+					Method initChannel = ChannelInitializer.class.getDeclaredMethod( "initChannel", Channel.class );
+					initChannel.setAccessible( true );
+					Field original = clazz.getDeclaredField( "original" );
+					original.setAccessible( true );
+					ChannelInitializer< Channel > initializer = ( ChannelInitializer< Channel > ) original.get( handler );
+					ChannelInitializer< Channel > miniInit = new ChannelInitializer< Channel >() {
+						@Override
+						protected void initChannel( Channel ch ) throws Exception {
+							initChannel.invoke( initializer, ch );
+							
+							inject( ch );
+						}
+					};
+					original.set( handler, miniInit );
+				}
 			}
 
 		};
 
 		ChannelInboundHandlerAdapter serverChannelHandler = new ChannelInboundHandlerAdapter() {
 			@Override
-			public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+			public void channelRead( ChannelHandlerContext ctx, Object msg ) throws Exception {
 				Channel channel = ( Channel ) msg;
 
 				// Prepare to initialize ths channel
@@ -130,7 +157,6 @@ public class NMSHandler implements PacketHandler {
 				}
 			}.runTask( JavaPlugin.getPlugin( BondrewdLikesHisEmotes.class ) );
 		}
-		
 	}
 	
 	private void bind( List< ChannelFuture > channelFutures, ChannelInboundHandlerAdapter serverChannelHandler ) {
@@ -201,20 +227,7 @@ public class NMSHandler implements PacketHandler {
 			// Replace the vanilla PacketEncoder with our own
 			ChannelHandler handler = channel.pipeline().get( "encoder" );
 			if ( !( handler instanceof CustomPacketEncoder ) ) {
-				if ( handler.getClass().getName().equals( "com.viaversion.viaversion.bukkit.handlers.BukkitEncodeHandler" ) ) {
-					try {
-						Class< ? > clazz = handler.getClass();
-						Field info = clazz.getDeclaredField( "info" );
-						info.setAccessible( true );
-						Constructor< ? > cons = clazz.getConstructor( info.getType(), MessageToByteEncoder.class );
-						Object viaEncoder = cons.newInstance( info.get( handler ), new CustomPacketEncoder() );
-						encoder.put( channel, channel.pipeline().replace( "encoder", "encoder", ( MessageToByteEncoder< ? > ) viaEncoder ) );
-					} catch ( NoSuchFieldException | SecurityException | NoSuchMethodException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e ) {
-						e.printStackTrace();
-					}
-				} else {
-					encoder.put( channel, channel.pipeline().replace( "encoder", "encoder", new CustomPacketEncoder() ) );
-				}
+				encoder.put( channel, channel.pipeline().replace( "encoder", "encoder", new CustomPacketEncoder() ) );
 			}
 		}
 		
@@ -222,20 +235,7 @@ public class NMSHandler implements PacketHandler {
 			// Replace the vanilla PacketDecoder with our own
 			ChannelHandler handler = channel.pipeline().get( "decoder" );
 			if ( !( handler instanceof CustomPacketDecoder ) ) {
-				if ( handler.getClass().getName().equals( "com.viaversion.viaversion.bukkit.handlers.BukkitDecodeHandler" ) ) {
-					try {
-						Class< ? > clazz = handler.getClass();
-						Field info = clazz.getDeclaredField( "info" );
-						info.setAccessible( true );
-						Constructor< ? > cons = clazz.getConstructor( info.getType(), ByteToMessageDecoder.class );
-						Object viaDecoder = cons.newInstance( info.get( handler ), new CustomPacketDecoder() );
-						decoder.put( channel, channel.pipeline().replace( "decoder", "decoder", ( ByteToMessageDecoder ) viaDecoder ) );
-					} catch ( NoSuchFieldException | SecurityException | NoSuchMethodException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e ) {
-						e.printStackTrace();
-					}
-				} else {
-					decoder.put( channel, channel.pipeline().replace( "decoder", "decoder", new CustomPacketDecoder() ) );
-				}
+				decoder.put( channel, channel.pipeline().replace( "decoder", "decoder", new CustomPacketDecoder() ) );
 			}
 		}
 	}
@@ -339,19 +339,19 @@ public class NMSHandler implements PacketHandler {
 			return val;
 		}
 		
-		@Override
-		public NBTTagCompound a( NBTReadLimiter limiter ) {
-			NBTTagCompound compound = super.a( limiter );
-			
-			if ( compound != null ) {
-				Player player = supplier.get();
-				if ( player != null ) {
-					transform( compound, val -> transformer.verifyFor( player, val ) );
-				}
-			}
-			
-			return compound;
-		}
+//		@Override
+//		public NBTTagCompound a( NBTReadLimiter limiter ) {
+//			NBTTagCompound compound = super.a( limiter );
+//			
+//			if ( compound != null ) {
+//				Player player = supplier.get();
+//				if ( player != null ) {
+//					transform( compound, val -> transformer.verifyFor( player, val ) );
+//				}
+//			}
+//			
+//			return compound;
+//		}
 	}
 
 	private class CustomPacketEncoder extends MessageToByteEncoder< Packet< ? > > {
@@ -374,7 +374,12 @@ public class NMSHandler implements PacketHandler {
 			var5.d( var4.intValue() );
 
 			try {
+				int var6 = var5.writerIndex();
 				var1.a( var5 );
+				int var7 = var5.writerIndex() - var6;
+				if ( var7 > 8388608 ) {
+					throw new IllegalArgumentException("Packet too big (is " + var7 + ", should be less than 8388608): " + var1);
+				}
 			} catch ( Exception var6 ) {
 				// Throw an error or something?
 				//				LOGGER.error( var6 );

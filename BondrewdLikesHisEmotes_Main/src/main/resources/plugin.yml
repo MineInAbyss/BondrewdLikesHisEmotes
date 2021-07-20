@@ -5,6 +5,7 @@ description: Custom emote translater for Mine in Abyss
 api-version: 1.13
 softdepend:
 - "PlaceholderAPI"
+- "Viaversion"
 commands:
   emote:
     description: View all of Bondrewd's favorite emotes
