@@ -256,7 +256,7 @@ public class NMSHandler implements PacketHandler {
 			this.supplier = supplier;
 		}
 		
-		@Override
+		/*@Override
 		public PacketDataSerializer a( IChatBaseComponent component ) {
 			JsonElement element = ChatSerializer.b( component );
 			BaseComponent[] components = ComponentSerializer.parse( element.toString() );
@@ -265,7 +265,7 @@ public class NMSHandler implements PacketHandler {
 			}
 			String json = ComponentSerializer.toString( components );
 			return super.a( ChatSerializer.a( json ) );
-		}
+		}*/
 		
 		@Override
 		public PacketDataSerializer a( String string, int len ) {
