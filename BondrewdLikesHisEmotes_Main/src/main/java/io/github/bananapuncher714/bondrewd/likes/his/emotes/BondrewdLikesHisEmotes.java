@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -27,6 +28,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerEditBookEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.meta.BookMeta;
+import org.bukkit.permissions.Permissible;
 import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.StringUtil;
@@ -37,7 +39,6 @@ import com.google.gson.GsonBuilder;
 import de.themoep.minedown.MineDown;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.api.ComponentTransformer;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.api.PacketHandler;
-import io.github.bananapuncher714.bondrewd.likes.his.emotes.dependencies.BondrewdExpansion;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.resourcepack.FontBitmap;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.resourcepack.FontIndex;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.resourcepack.NamespacedKey;
@@ -57,8 +58,13 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 	private static int EMOTE_HEIGHT = 11;
 	private static int EMOTE_ASCENT = 9;
 	private static String DEFAULT_NAMESPACE = "minecraft";
-	private static String DEFAULT_FOLDER = "emotes/";
+	private static String DEFAULT_FOLDER = "emotes";
 	private static String DEFAULT_FONT = "emote";
+	private static String DEFAULT_GIF_NAMESPACE = "minecraft";
+	private static String DEFAULT_GIF_FOLDER = "gifs";
+	private static String DEFAULT_GIF_FONT = "gif";
+	private static String NEGATIVE_SPACE_NAMESPACE = "space:font/space_split.png";
+	
 	private static final char STARTING_CHAR = '\uEBAF';
 	private static final String EMOTE_FORMAT = ":%s:";
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -91,7 +97,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 				return verify( player, string );
 			}
 			
-		});
+		} );
 
 		Bukkit.getPluginManager().registerEvents( new Listener() {
 			@EventHandler
@@ -130,13 +136,6 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		} else {
 			getLogger().info( "Loaded emotes: " + String.join( " ", emotes.stream().map( Emote::getId ).collect( Collectors.toList() ) ) );
 		}
-		
-		// Register PlaceholderAPI with "emotes" namespace
-		if ( Bukkit.getPluginManager().getPlugin( "PlaceholderAPI" ) != null ) {
-			new BondrewdExpansion( this ).register();
-		} else {
-        	getLogger().info( "PlaceholderAPI not detected!" );
-        }
 	}
 
 	@Override
@@ -183,6 +182,9 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 					Collections.sort( sortedEmotes, new Comparator< Emote >() {
 						@Override
 						public int compare( Emote e1, Emote e2 ) {
+							if ( e1.isGif() ^ e2.isGif() ) {
+								return e1.isGif() ? 1 : -1;
+							}
 							if ( e1.getFormatting().toLowerCase().contains( "k" ) ^ e2.getFormatting().toLowerCase().contains( "k" ) ) {
 								return e1.getFormatting().toLowerCase().contains( "k" ) ? 1 : -1;
 							}
@@ -195,8 +197,8 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 					boolean found = false;
 					boolean foundGif = false;
 					for ( Emote emote : sortedEmotes ) {
-						if ( sender.hasPermission( "bondrewdemotes.emote." + emote.getId() ) ) {
-							if ( emote.getFormatting().toLowerCase().contains( "k" ) ) {
+						if ( hasEmotePerms( sender, emote ) ) {
+							if ( emote.isGif() ) {
 								gifBuilder.append( ":" );
 								gifBuilder.append( emote.getId() );
 								gifBuilder.append( ": " );
@@ -241,8 +243,11 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		EMOTE_HEIGHT = config.getInt( "default-height" );
 		EMOTE_ASCENT = config.getInt( "default-ascent" );
 		DEFAULT_NAMESPACE = config.getString( "default-namespace", "minecraft" );
-		DEFAULT_FOLDER = config.getString( "default-folder", "emotes/" );
+		DEFAULT_FOLDER = config.getString( "default-folder", "emotes" );
 		DEFAULT_FONT = config.getString( "default-font", "default" );
+		DEFAULT_GIF_NAMESPACE = config.getString( "default-gif-namespace", "minecraft" );
+		DEFAULT_GIF_FOLDER = config.getString( "default-gif-folder", "gifs" );
+		DEFAULT_GIF_FONT = config.getString( "default-gif-font", "default" );
 		
 		String noEmoteMessageString = config.getString( "messages.no-emote" );
 		if ( noEmoteMessageString != null && !noEmoteMessageString.isEmpty() ) {
@@ -261,9 +266,11 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		Map< String, FontIndex > fonts = new HashMap< String, FontIndex >();
 		
 		int c = STARTING_CHAR;
+		Map< String, Integer > charHolder = new HashMap< String, Integer >();
 		List< String > emoteList = config.getStringList( "emotes" );
 		for ( String emote : emoteList ) {
-			Emote parsedEmote = parseEmoteFrom( emote );
+			EmoteInfo emoteInfo = parseEmoteFrom( emote );
+			Emote parsedEmote = emoteInfo.emote;
 			
 			String font = parsedEmote.getFont();
 			FontIndex index = fonts.get( font );
@@ -272,16 +279,73 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 				fonts.put( font, index );
 			}
 			
-			parsedEmote.setChar( ( char ) c );
+			int v = charHolder.getOrDefault( font, c );
+			
+			parsedEmote.setValue( String.valueOf( ( char ) v ) );
 			emotes.add( parsedEmote );
 			
-			FontBitmap provider = new FontBitmap( NamespacedKey.fromString( parsedEmote.getNamespace() ), new String[] { String.valueOf( ( char ) c ) } );
-			provider.setHeight( parsedEmote.getHeight() );
-			provider.setAscent( parsedEmote.getAscent() );
+			FontBitmap provider = new FontBitmap( NamespacedKey.fromString( emoteInfo.namespace ), new String[] { String.valueOf( ( char ) v ) } );
+			provider.setHeight( emoteInfo.height );
+			provider.setAscent( emoteInfo.ascent );
 			index.addProvider( provider );
 
-			c++;
+			charHolder.put( font, v + 1 );
 		};
+		
+		// Load in all gifs
+		ConfigurationSection gifList = config.getConfigurationSection( "gifs" );
+		if ( gifList != null ) {
+			for ( String gif : gifList.getKeys( false ) ) {
+				ConfigurationSection gifSec = gifList.getConfigurationSection( gif );
+				
+				int framecount = gifSec.getInt( "framecount", 0 );
+				int width = gifSec.getInt( "width", 0 );
+				
+				if ( framecount <= 0 || width <= 0 ) {
+					getLogger().warning( String.format( "Unable to parse gif '%s', invalid framecount/width!", gif ) );
+				}
+				
+				String namespace = gifSec.getString( "namespace", DEFAULT_GIF_NAMESPACE );
+				String folder = gifSec.getString( "folder", DEFAULT_GIF_FOLDER );
+				String font = gifSec.getString( "font", DEFAULT_GIF_FONT );
+				
+				int height = gifSec.getInt( "height", EMOTE_HEIGHT );
+				int ascent = gifSec.getInt( "ascent", EMOTE_ASCENT );
+				
+				Emote gifEmote = new Emote( gif, true );
+				gifEmote.setFont( font );
+				gifEmote.setFormatting( "" );
+				
+				int v = charHolder.getOrDefault( font, c );
+				FontIndex index = fonts.get( font );
+				if ( index == null ) {
+					index = new FontIndex();
+					fonts.put( font, index );
+				}
+				
+				StringBuilder gifBuilder = new StringBuilder();
+				char negativeSpace = ( char ) v++;
+				FontBitmap provider = new FontBitmap( NamespacedKey.fromString( NEGATIVE_SPACE_NAMESPACE ), new String[] { String.valueOf( negativeSpace ) } );
+				provider.setHeight( - ( width + 3 ) );
+				provider.setAscent( -32768 );
+				index.addProvider( provider );
+				
+				for ( int i = 0; i < framecount; i++ ) {
+					gifBuilder.append( ( char ) v );
+					if ( i < framecount - 1 ) {
+						gifBuilder.append( negativeSpace );
+					}
+					FontBitmap frameProvider = new FontBitmap( new NamespacedKey( namespace, String.format( "%s/%s/%03d.png", folder, gif, i ) ), new String[] { String.valueOf( ( char ) v++ ) } );
+					frameProvider.setHeight( height );
+					frameProvider.setAscent( ascent );
+					index.addProvider( frameProvider );
+				}
+				gifEmote.setValue( gifBuilder.toString() );
+
+				emotes.add( gifEmote );
+				charHolder.put( font, v );
+			}
+		}
 		
 		for ( Entry< String, FontIndex > entry : fonts.entrySet() ) {
 			File fontFile = new File( getDataFolder() + "/fonts/" + entry.getKey() + ".json" );
@@ -355,40 +419,48 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 							}
 							
 							if ( i < split.length - 1 ) {
-								TextComponent emoteComp = new TextComponent( String.valueOf( emote.getChar() ) );
-								for ( char c : emote.getFormatting().toCharArray() ) {
-									switch ( c ) {
-									case 'k':
-									case 'K':
-										emoteComp.setObfuscated( true );
-										break;
-									case 'l':
-									case 'L':
-										emoteComp.setBold( true );
-										break;
-									case 'm':
-									case 'M':
-										emoteComp.setStrikethrough( true );
-										break;
-									case 'n':
-									case 'N':
-										emoteComp.setUnderlined( true );
-										break;
-									case 'o':
-									case 'O':
-										emoteComp.setItalic( true );
-										break;
+								TextComponent emoteComp = new TextComponent( emote.getValue() );
+								if ( emote.isGif() ) {
+									emoteComp.setColor( ChatColor.of( new Color( 0xFEFEFE ) ) );
+								} else {
+									for ( char c : emote.getFormatting().toCharArray() ) {
+										switch ( c ) {
+										case 'k':
+										case 'K':
+											emoteComp.setObfuscated( true );
+											break;
+										case 'l':
+										case 'L':
+											emoteComp.setBold( true );
+											break;
+										case 'm':
+										case 'M':
+											emoteComp.setStrikethrough( true );
+											break;
+										case 'n':
+										case 'N':
+											emoteComp.setUnderlined( true );
+											break;
+										case 'o':
+										case 'O':
+											emoteComp.setItalic( true );
+											break;
+										}
 									}
+									
+									emoteComp.setColor( ChatColor.WHITE );
 								}
 								
-								emoteComp.setColor( net.md_5.bungee.api.ChatColor.WHITE );
+								// For renaming items
+								if ( emoteComp.isItalicRaw() == null ) {
+									emoteComp.setItalic( false );
+								}
+								
 								emoteComp.setFont( emote.getFont() );
 								
 								if ( hover == null && full ) {
-									TextComponent hoverComp = new TextComponent( key );
-									emoteComp.setHoverEvent( new HoverEvent( Action.SHOW_TEXT, new BaseComponent[] { hoverComp } ) );
+									emoteComp.setHoverEvent( new HoverEvent( Action.SHOW_TEXT, new BaseComponent[] { new TextComponent( key ) } ) );
 								}
-								
 								temp.add( emoteComp );
 							}
 						}
@@ -470,11 +542,11 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		boolean noEmote = false;
 		boolean noGif = false;
 		for ( Emote emote : emotes ) {
-			if ( !player.hasPermission( "bondrewdemotes.emote." + emote.getId() ) ) {
+			if ( !hasEmotePerms( player, emote ) ) {
 				String search = String.format( EMOTE_FORMAT, emote.getId() );
 				String replaced = string.replace( search, "\\" + search );
 				if ( !string.equals( replaced ) ) {
-					if ( emote.getFormatting().toLowerCase().contains( "k" ) ) {
+					if ( emote.isGif() ) {
 						noGif = true;
 					} else {
 						noEmote = true;
@@ -495,7 +567,12 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		return string;
 	}
 	
-	private Emote parseEmoteFrom( String string ) {
+	private boolean hasEmotePerms( Permissible player, Emote emote ) {
+		return player.hasPermission( "bondrewdemotes.emote." + emote.getId() ) ||
+				player.hasPermission( "bondrewdemotes.font." + emote.getFont().replace( '.', '/' ) );
+	}
+	
+	private EmoteInfo parseEmoteFrom( String string ) {
 		String[] split = string.split( "\\s+" );
 		if ( split.length == 0 ) {
 			return null;
@@ -510,7 +587,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 			id = formatSplit[ 0 ];
 		}
 		
-		Emote emote = new Emote( id );
+		Emote emote = new Emote( id, false );
 		if ( fontSplit.length > 1 ) {
 			emote.setFont( fontSplit[ 0 ] );
 		} else {
@@ -522,29 +599,17 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		} else {
 			emote.setFormatting( "" );
 		}
-		
-		if ( split.length > 1 ) {
-			emote.setNamespace( split[ 1 ] );
-		} else {
-			emote.setNamespace( DEFAULT_NAMESPACE + ":" + DEFAULT_FOLDER + "/" + emote.id + ".png" );
-		}
-		
+
+		String namespace = split.length > 1 ? split[ 1 ] : DEFAULT_NAMESPACE + ":" + DEFAULT_FOLDER + "/" + emote.id + ".png";
+		int height = EMOTE_HEIGHT;
+		int ascent = EMOTE_ASCENT;
 		if ( split.length > 3 ) {
-			emote.setHeightAndAscent( Integer.parseInt( split[ 2 ] ), Integer.parseInt( split[ 3 ] ) );
-		} else {
-			emote.setHeightAndAscent( EMOTE_HEIGHT, EMOTE_ASCENT );
+			height = Integer.parseInt( split[ 2 ] );
+			ascent = Integer.parseInt( split[ 3 ] );
 		}
+		EmoteInfo info = new EmoteInfo( emote, namespace, height, ascent );
 		
-		return emote;
-	}
-	
-	public String getEmoteFor( String string ) {
-		for ( Emote emote : emotes ) {
-			if ( string.equalsIgnoreCase( emote.getId() ) ) {
-				return String.valueOf( emote.getChar() );
-			}
-		}
-		return null;
+		return info;
 	}
 
 	public List< Emote > getEmotes() {
@@ -561,5 +626,20 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 	
 	public static int getEmoteAscent() {
 		return EMOTE_ASCENT;
+	}
+	
+	private class EmoteInfo {
+		Emote emote;
+		String namespace;
+		int height;
+		int ascent;
+		
+		protected EmoteInfo( Emote emote, String namespace, int height, int ascent ) {
+			super();
+			this.emote = emote;
+			this.namespace = namespace;
+			this.height = height;
+			this.ascent = ascent;
+		}
 	}
 }

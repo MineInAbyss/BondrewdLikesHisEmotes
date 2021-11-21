@@ -2,32 +2,18 @@ package io.github.bananapuncher714.bondrewd.likes.his.emotes;
 
 public class Emote {
 	public final String id;
-	String font;
-	String formatting;
-	String namespace;
-	int height;
-	int ascent;
-	char c;
+	String font = "";
+	String formatting = "";
+	String value = "";
+	boolean gif = false;
 	
-	public Emote( String id ) {
+	public Emote( String id, boolean gif ) {
 		this.id = id;
-	}
-	
-	public void setHeightAndAscent( int height, int ascent ) {
-		this.height = height;
-		this.ascent = ascent;
+		this.gif = gif;
 	}
 	
 	public void setFont( String font ) {
 		this.font = font;
-	}
-	
-	public void setFormatting( String formatting ) {
-		this.formatting = formatting;
-	}
-	
-	public void setNamespace( String namespace ) {
-		this.namespace = namespace;
 	}
 
 	public String getId() {
@@ -38,27 +24,23 @@ public class Emote {
 		return font;
 	}
 
+	public void setFormatting( String formatting ) {
+		this.formatting = formatting;
+	}
+	
 	public String getFormatting() {
 		return formatting;
 	}
-
-	public String getNamespace() {
-		return namespace;
+	
+	public void setValue( String val ) {
+		value = val;
 	}
-
-	public int getHeight() {
-		return height;
+	
+	public String getValue() {
+		return value;
 	}
-
-	public int getAscent() {
-		return ascent;
-	}
-
-	public char getChar() {
-		return c;
-	}
-
-	public void setChar( char c ) {
-		this.c = c;
+	
+	public boolean isGif() {
+		return gif;
 	}
 }

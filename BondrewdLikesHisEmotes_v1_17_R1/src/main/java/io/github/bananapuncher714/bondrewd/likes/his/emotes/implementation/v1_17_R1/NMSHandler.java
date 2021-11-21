@@ -1,9 +1,7 @@
 package io.github.bananapuncher714.bondrewd.likes.his.emotes.implementation.v1_17_R1;
 
 import java.io.IOException;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,7 +25,6 @@ import com.google.gson.JsonParser;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.BondrewdLikesHisEmotes;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.api.ComponentTransformer;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.api.PacketHandler;
-import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -258,7 +255,7 @@ public class NMSHandler implements PacketHandler {
 			
 			this.supplier = supplier;
 		}
-
+		
 		@Override
 		public PacketDataSerializer a( IChatBaseComponent component ) {
 			JsonElement element = ChatSerializer.b( component );
@@ -271,6 +268,30 @@ public class NMSHandler implements PacketHandler {
 		}
 		
 		@Override
+		public PacketDataSerializer a( String string, int len ) {
+			if ( transformer != null ) {
+				try {
+					JsonElement element = parser.parse( string );
+					if ( element.isJsonObject() ) {
+						JsonObject obj = element.getAsJsonObject();
+
+						if ( obj.has( "args" ) || obj.has( "text" ) || obj.has( "extra" ) || obj.has( "translate" ) ) {
+							BaseComponent[] components = ComponentSerializer.parse( element.toString() );
+							for ( int i = 0; i < components.length; i++ ) {
+								components[ i ] = transformer.transform( components[ i ] );
+							}
+							String json = ComponentSerializer.toString( components );
+							return super.a( json, len );
+						}
+					}
+				} catch ( Exception e ) {
+				}
+			}
+			
+			return super.a( string, len );
+		}
+		
+		@Override
 		public PacketDataSerializer a( NBTTagCompound compound ) {
 			if ( transformer != null && compound != null ) {
 				transform( compound, val -> {
@@ -279,7 +300,7 @@ public class NMSHandler implements PacketHandler {
 						if ( element.isJsonObject() ) {
 							JsonObject obj = element.getAsJsonObject();
 							
-							if ( obj.has( "args" ) || obj.has( "text" ) || obj.has( "extra" ) ) {
+							if ( obj.has( "args" ) || obj.has( "text" ) || obj.has( "extra" ) || obj.has( "translate" ) ) {
 								BaseComponent[] components = ComponentSerializer.parse( element.toString() );
 								for ( int i = 0; i < components.length; i++ ) {
 									components[ i ] = transformer.transform( components[ i ] );
