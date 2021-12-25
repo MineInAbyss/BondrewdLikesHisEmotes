@@ -198,7 +198,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 					boolean foundGif = false;
 					for ( Emote emote : sortedEmotes ) {
 						if ( hasEmotePerms( sender, emote ) ) {
-							if ( emote.isGif() ) {
+							if ( emote.isGif() || emote.getFormatting().toLowerCase().contains( "k" ) ) {
 								gifBuilder.append( ":" );
 								gifBuilder.append( emote.getId() );
 								gifBuilder.append( ": " );
@@ -546,7 +546,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 				String search = String.format( EMOTE_FORMAT, emote.getId() );
 				String replaced = string.replace( search, "\\" + search );
 				if ( !string.equals( replaced ) ) {
-					if ( emote.isGif() ) {
+					if ( emote.isGif() || emote.getFormatting().toLowerCase().contains( "k" ) ) {
 						noGif = true;
 					} else {
 						noEmote = true;
