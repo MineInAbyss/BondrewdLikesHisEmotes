@@ -1,21 +1,21 @@
 package io.github.bananapuncher714.bondrewd.likes.his.emotes;
 
-import java.awt.Color;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
-
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import de.themoep.minedown.MineDown;
+import io.github.bananapuncher714.bondrewd.likes.his.emotes.api.ComponentTransformer;
+import io.github.bananapuncher714.bondrewd.likes.his.emotes.api.PacketHandler;
+import io.github.bananapuncher714.bondrewd.likes.his.emotes.resourcepack.FontBitmap;
+import io.github.bananapuncher714.bondrewd.likes.his.emotes.resourcepack.FontIndex;
+import io.github.bananapuncher714.bondrewd.likes.his.emotes.resourcepack.NamespacedKey;
+import io.github.bananapuncher714.bondrewd.likes.his.emotes.util.FileUtil;
+import io.github.bananapuncher714.bondrewd.likes.his.emotes.util.PermissionBuilder;
+import io.github.bananapuncher714.bondrewd.likes.his.emotes.util.PlaceholderUtil;
+import io.github.bananapuncher714.bondrewd.likes.his.emotes.util.ReflectionUtil;
+import net.md_5.bungee.api.ChatColor;
+import net.md_5.bungee.api.chat.*;
+import net.md_5.bungee.api.chat.TextComponent;
+import net.md_5.bungee.api.chat.HoverEvent.Action;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -33,25 +33,16 @@ import org.bukkit.permissions.PermissionDefault;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.StringUtil;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-import de.themoep.minedown.MineDown;
-import io.github.bananapuncher714.bondrewd.likes.his.emotes.api.ComponentTransformer;
-import io.github.bananapuncher714.bondrewd.likes.his.emotes.api.PacketHandler;
-import io.github.bananapuncher714.bondrewd.likes.his.emotes.resourcepack.FontBitmap;
-import io.github.bananapuncher714.bondrewd.likes.his.emotes.resourcepack.FontIndex;
-import io.github.bananapuncher714.bondrewd.likes.his.emotes.resourcepack.NamespacedKey;
-import io.github.bananapuncher714.bondrewd.likes.his.emotes.util.FileUtil;
-import io.github.bananapuncher714.bondrewd.likes.his.emotes.util.PermissionBuilder;
-import io.github.bananapuncher714.bondrewd.likes.his.emotes.util.ReflectionUtil;
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.ClickEvent;
-import net.md_5.bungee.api.chat.HoverEvent;
-import net.md_5.bungee.api.chat.HoverEvent.Action;
-import net.md_5.bungee.api.chat.TextComponent;
-import net.md_5.bungee.api.chat.TranslatableComponent;
+import java.awt.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 public class BondrewdLikesHisEmotes extends JavaPlugin {
 	// Could technically be 8, but it's small enough as it is so why not 11
@@ -135,6 +126,10 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 			getLogger().info( "Didn't detect any emotes!" );
 		} else {
 			getLogger().info( "Loaded emotes: " + String.join( " ", emotes.stream().map( Emote::getId ).collect( Collectors.toList() ) ) );
+		}
+
+		if(Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+			new PlaceholderUtil(this).register();
 		}
 	}
 
