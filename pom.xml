@@ -12,15 +12,11 @@
 	<modules>
 		<module>BondrewdLikesHisEmotes_Main</module>
 		<module>BondrewdLikesHisEmotes</module>
-		<module>BondrewdLikesHisEmotes_v1_15_R1</module>
-		<module>BondrewdLikesHisEmotes_v1_16_R1</module>
-		<module>BondrewdLikesHisEmotes_v1_16_R2</module>
-		<module>BondrewdLikesHisEmotes_v1_16_R3</module>
 		<module>BondrewdLikesHisEmotes_v1_17_R1</module>
-		<module>BondrewdLikesHisEmotes_v1_18_R1</module>
 		<module>BondrewdLikesHisEmotes_v1_18_R2</module>
 		<module>BondrewdLikesHisEmotes_v1_19_R1</module>
 		<module>BondrewdLikesHisEmotes_v1_19_R2</module>
+		<module>BondrewdLikesHisEmotes_v1_19_R3</module>
 	</modules>
 	
 	<build>
