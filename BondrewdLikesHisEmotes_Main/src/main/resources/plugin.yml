@@ -1,8 +1,8 @@
 name: BondrewdLikesHisEmotes
 main: io.github.bananapuncher714.bondrewd.likes.his.emotes.BondrewdLikesHisEmotes
-version: 1.1.4
+version: 1.2.0
 description: Custom emote translater for Mine in Abyss
-api-version: 1.13
+api-version: 1.17
 softdepend:
 - "Viaversion"
 commands:
