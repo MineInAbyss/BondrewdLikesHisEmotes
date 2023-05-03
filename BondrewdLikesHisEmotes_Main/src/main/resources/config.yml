@@ -11,7 +11,11 @@ default-gif-namespace: "minecraft"
 default-gif-folder: "gifs"
 default-gif-font: "gif"
 
-negative-spaces-image: "space:font/space_split.png"
+# Recommended to switch this to MODERN on 1.19+ servers
+# Allowed types are: LEGACY, MODERN, BOTH
+negative-space-type: LEGACY
+negative-space-font: "space"
+negative-space-texture: "space:font/space.png"
 
 messages:
   no-emote: ""
