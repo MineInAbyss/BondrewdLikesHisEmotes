@@ -424,8 +424,6 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
     private void addModernSpaceEntries(Map<String, FontIndex> fonts) {
         JsonObject advances = new JsonObject();
         for (Emote space : spaces) {
-            getLogger().info("Adding space " + space.id);
-            getLogger().warning("value: " + space.value.charAt(0));
             int advance = Integer.parseInt(space.id.split("space_")[1]) + 3;
             advances.addProperty(space.value, advance);
         }
