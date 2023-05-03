@@ -74,8 +74,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 
     public enum NegativeSpaceType {
         LEGACY,
-        MODERN,
-        BOTH
+        MODERN
     }
 
     @Override
@@ -363,9 +362,6 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
         if (NEGATIVE_SPACE_TYPE == null || NEGATIVE_SPACE_TYPE == NegativeSpaceType.LEGACY) {
             addLegacySpaceEntries(fonts);
         } else if (NEGATIVE_SPACE_TYPE == NegativeSpaceType.MODERN) {
-            addModernSpaceEntries(fonts);
-        } else if (NEGATIVE_SPACE_TYPE == NegativeSpaceType.BOTH) {
-            addLegacySpaceEntries(fonts);
             addModernSpaceEntries(fonts);
         }
 
