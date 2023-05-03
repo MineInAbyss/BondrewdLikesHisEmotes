@@ -63,14 +63,17 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 	private static String DEFAULT_GIF_NAMESPACE = "minecraft";
 	private static String DEFAULT_GIF_FOLDER = "gifs";
 	private static String DEFAULT_GIF_FONT = "gif";
-	private static String NEGATIVE_SPACE_NAMESPACE = "space:font/space_split.png";
-	
+	private static String NEGATIVE_SPACE_FONT = "space";
+	private static String NEGATIVE_SPACE_TEXTURE = "space:font/space_split.png";
+
 	private static final char STARTING_CHAR = '\uEBAF';
 	private static final String EMOTE_FORMAT = ":%s:";
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	
 	private PacketHandler handler;
 	private List< Emote > emotes = new ArrayList< Emote >();
+	private List<Emote> spaces = new ArrayList< Emote >();
+	private List<Emote> emotes_and_spaces = new ArrayList< Emote >();
 	
 	private BaseComponent[] noEmoteMessage;
 	private BaseComponent[] noGifMessage;
@@ -248,6 +251,8 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		DEFAULT_GIF_NAMESPACE = config.getString( "default-gif-namespace", "minecraft" );
 		DEFAULT_GIF_FOLDER = config.getString( "default-gif-folder", "gifs" );
 		DEFAULT_GIF_FONT = config.getString( "default-gif-font", "default" );
+		NEGATIVE_SPACE_FONT = config.getString( "negative-space-font", "space" );
+		NEGATIVE_SPACE_TEXTURE = config.getString( "negative-space-texture", "space:font/space.png" );
 		
 		String noEmoteMessageString = config.getString( "messages.no-emote" );
 		if ( noEmoteMessageString != null && !noEmoteMessageString.isEmpty() ) {
@@ -263,6 +268,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 		}
 		
 		emotes.clear();
+		spaces.clear();
 		Map< String, FontIndex > fonts = new HashMap< String, FontIndex >();
 		
 		int c = STARTING_CHAR;
@@ -291,7 +297,13 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 
 			charHolder.put( font, v + 1 );
 		};
-		
+
+		// Add negative spaces
+		for (int i = 1; i <= 1028; i++)
+			addSpaceEntries(fonts, charHolder, i);
+		for (int i = -1; i >= -1028; i--)
+			addSpaceEntries(fonts, charHolder, i);
+
 		// Load in all gifs
 		ConfigurationSection gifList = config.getConfigurationSection( "gifs" );
 		if ( gifList != null ) {
@@ -325,7 +337,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 				
 				StringBuilder gifBuilder = new StringBuilder();
 				char negativeSpace = ( char ) v++;
-				FontBitmap provider = new FontBitmap( NamespacedKey.fromString( NEGATIVE_SPACE_NAMESPACE ), new String[] { String.valueOf( negativeSpace ) } );
+				FontBitmap provider = new FontBitmap( NamespacedKey.fromString( NEGATIVE_SPACE_TEXTURE ), new String[] { String.valueOf( negativeSpace ) } );
 				provider.setHeight( - ( width + 3 ) );
 				provider.setAscent( -32768 );
 				index.addProvider( provider );
@@ -365,6 +377,33 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 				e.printStackTrace();
 			}
 		}
+
+		emotes_and_spaces.addAll( emotes );
+		emotes_and_spaces.addAll( spaces );
+	}
+
+	private void addSpaceEntries(Map<String, FontIndex> fonts, Map<String, Integer> charHolder, int i) {
+		EmoteInfo emoteInfo = parseEmoteFrom(NEGATIVE_SPACE_FONT + "|space_" + i + " " + NEGATIVE_SPACE_TEXTURE);
+		Emote parsedEmote = emoteInfo.emote;
+
+		String font = parsedEmote.getFont();
+		FontIndex index = fonts.get( font );
+		if ( index == null ) {
+			index = new FontIndex();
+			fonts.put( font, index );
+		}
+
+		int v = charHolder.getOrDefault( font, (int) STARTING_CHAR);
+
+		parsedEmote.setValue( String.valueOf( ( char ) v ) );
+		spaces.add( parsedEmote );
+
+		FontBitmap provider = new FontBitmap( NamespacedKey.fromString( emoteInfo.namespace ), new String[] { String.valueOf( ( char ) v ) } );
+		provider.setHeight( emoteInfo.height );
+		provider.setAscent( emoteInfo.ascent );
+		index.addProvider( provider );
+
+		charHolder.put( font, v + 1 );
 	}
 	
 	private void loadPermissions() {
@@ -403,7 +442,8 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 			
 			List< TextComponent > components = new LinkedList< TextComponent >();
 			components.add( text );
-			for ( Emote emote : emotes ) {
+
+			for ( Emote emote : emotes_and_spaces ) {
 				List< TextComponent > temp = new LinkedList< TextComponent >();
 				String key = String.format( EMOTE_FORMAT, emote.getId() );
 				for ( TextComponent comp : components ) {
@@ -460,6 +500,11 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 								
 								if ( hover == null && full ) {
 									emoteComp.setHoverEvent( new HoverEvent( Action.SHOW_TEXT, new BaseComponent[] { new TextComponent( key ) } ) );
+								}
+								// Remove hover and click from spaces
+								if (spaces.contains(emote)) {
+									emoteComp.setClickEvent(null);
+									emoteComp.setHoverEvent(null);
 								}
 								temp.add( emoteComp );
 							}

@@ -11,7 +11,8 @@ default-gif-namespace: "minecraft"
 default-gif-folder: "gifs"
 default-gif-font: "gif"
 
-negative-spaces-image: "space:font/space_split.png"
+negative-space-font: "space"
+negative-space-texture: "space:font/space.png"
 
 messages:
   no-emote: ""
