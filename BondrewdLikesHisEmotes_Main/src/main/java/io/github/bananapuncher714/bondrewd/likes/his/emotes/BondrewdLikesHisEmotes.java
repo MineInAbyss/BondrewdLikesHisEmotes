@@ -46,6 +46,7 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 public class BondrewdLikesHisEmotes extends JavaPlugin {
+    private static BondrewdLikesHisEmotes plugin;
     // Could technically be 8, but it's small enough as it is so why not 11
     private static int EMOTE_HEIGHT = 11;
     private static int EMOTE_ASCENT = 9;
@@ -59,6 +60,10 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
     private static NegativeSpaceType NEGATIVE_SPACE_TYPE = NegativeSpaceType.LEGACY;
     private static String NEGATIVE_SPACE_FONT = "space";
     private static String NEGATIVE_SPACE_TEXTURE = "space:font/space_split.png";
+
+    private static List<String> TABCOMPLETING_EMOTES = new ArrayList<>();
+    private static List<String> TABCOMPLETING_GIFS = new ArrayList<>();
+    private static List<String> TABCOMPLETING_FONTS = new ArrayList<>();
 
     private static final char STARTING_CHAR = '\uEBAF';
     private static final String EMOTE_FORMAT = ":%s:";
@@ -79,6 +84,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        plugin = this;
         handler = ReflectionUtil.getNewPacketHandlerInstance();
         if (handler == null) {
             getLogger().severe(ReflectionUtil.VERSION + " is not currently supported! Disabling...");
@@ -105,6 +111,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
             @EventHandler
             private void onEvent(PlayerJoinEvent event) {
                 handler.inject(event.getPlayer());
+                handler.addChatCompletions(event.getPlayer(), plugin);
             }
 
             @EventHandler
@@ -254,6 +261,10 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
         NEGATIVE_SPACE_TYPE = NegativeSpaceType.valueOf(config.getString("negative-space-type", "LEGACY").toUpperCase());
         NEGATIVE_SPACE_FONT = config.getString("negative-space-font", "space");
         NEGATIVE_SPACE_TEXTURE = config.getString("negative-space-texture", "space:font/space.png");
+
+        TABCOMPLETING_EMOTES = config.getStringList("tabcompleting-emotes");
+        TABCOMPLETING_GIFS = config.getStringList("tabcompleting-gifs");
+        TABCOMPLETING_FONTS = config.getStringList("tabcompleting-fonts");
 
         String noEmoteMessageString = config.getString("messages.no-emote");
         if (noEmoteMessageString != null && !noEmoteMessageString.isEmpty()) {
@@ -647,7 +658,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
         return string;
     }
 
-    private boolean hasEmotePerms(Permissible player, Emote emote) {
+    public static boolean hasEmotePerms(Permissible player, Emote emote) {
         return player.hasPermission("bondrewdemotes.emote." + emote.getId()) ||
                 player.hasPermission("bondrewdemotes.font." + emote.getFont().replace('.', '/'));
     }
@@ -687,9 +698,8 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
             height = Integer.parseInt(split[2]);
             ascent = Integer.parseInt(split[3]);
         }
-        EmoteInfo info = new EmoteInfo(emote, namespace, height, ascent);
 
-        return info;
+        return new EmoteInfo(emote, namespace, height, ascent);
     }
 
     public List<Emote> getEmotes() {
@@ -721,5 +731,9 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
             this.height = height;
             this.ascent = ascent;
         }
+    }
+
+    public static boolean shouldTabComplete(Emote emote) {
+        return TABCOMPLETING_EMOTES.contains(emote.getId()) || TABCOMPLETING_GIFS.contains(emote.getId()) || TABCOMPLETING_FONTS.contains(emote.getFont());
     }
 }

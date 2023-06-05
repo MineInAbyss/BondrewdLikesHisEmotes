@@ -4,6 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.BondrewdLikesHisEmotes;
+import io.github.bananapuncher714.bondrewd.likes.his.emotes.Emote;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.api.ComponentTransformer;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.api.PacketHandler;
 import io.netty.buffer.ByteBuf;
@@ -31,11 +32,11 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.net.SocketAddress;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class NMSHandler implements PacketHandler {
     private final Map<Channel, ChannelHandler> encoder = Collections.synchronizedMap(new WeakHashMap<>());
@@ -178,6 +179,14 @@ public class NMSHandler implements PacketHandler {
                 }
             }
         }
+    }
+
+    @Override
+    public void addChatCompletions(Player player, BondrewdLikesHisEmotes plugin) {
+        List<String> completions = plugin.getEmotes().stream().filter( emote ->
+                BondrewdLikesHisEmotes.shouldTabComplete(emote) && BondrewdLikesHisEmotes.hasEmotePerms(player, emote))
+                .map(Emote::getValue).collect(Collectors.toList());
+        player.setCustomChatCompletions(completions);
     }
 
     @Override

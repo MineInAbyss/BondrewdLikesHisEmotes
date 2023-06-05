@@ -1,37 +1,13 @@
 package io.github.bananapuncher714.bondrewd.likes.his.emotes.implementation.v1_18_R2;
 
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.WeakHashMap;
-import java.util.function.Function;
-import java.util.function.Supplier;
-
-import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.v1_18_R2.entity.CraftPlayer;
-import org.bukkit.entity.Player;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitRunnable;
-
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.BondrewdLikesHisEmotes;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.api.ComponentTransformer;
 import io.github.bananapuncher714.bondrewd.likes.his.emotes.api.PacketHandler;
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelHandler;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
+import io.netty.channel.*;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.MessageToByteEncoder;
 import net.md_5.bungee.api.chat.BaseComponent;
@@ -40,17 +16,25 @@ import net.minecraft.nbt.NBTBase;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagString;
-import net.minecraft.network.EnumProtocol;
-import net.minecraft.network.NetworkManager;
-import net.minecraft.network.PacketDataSerializer;
-import net.minecraft.network.PacketDecoder;
-import net.minecraft.network.PacketEncoder;
-import net.minecraft.network.SkipEncodeException;
+import net.minecraft.network.*;
 import net.minecraft.network.protocol.EnumProtocolDirection;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.PlayerConnection;
 import net.minecraft.server.network.ServerConnection;
+import org.bukkit.Bukkit;
+import org.bukkit.craftbukkit.v1_18_R2.entity.CraftPlayer;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitRunnable;
+
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.*;
+import java.util.Map.Entry;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 public class NMSHandler implements PacketHandler {
 	private Map< Channel, ChannelHandler > encoder = Collections.synchronizedMap( new WeakHashMap< Channel, ChannelHandler >() );
@@ -182,6 +166,11 @@ public class NMSHandler implements PacketHandler {
 				}
 			}
 		}
+	}
+
+	@Override
+	public void addChatCompletions(Player player, BondrewdLikesHisEmotes plugin) {
+
 	}
 
 	@Override

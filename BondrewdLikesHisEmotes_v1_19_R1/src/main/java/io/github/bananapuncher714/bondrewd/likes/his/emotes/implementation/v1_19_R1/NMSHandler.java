@@ -169,6 +169,11 @@ public class NMSHandler implements PacketHandler {
 	}
 
 	@Override
+	public void addChatCompletions(Player player, BondrewdLikesHisEmotes plugin) {
+
+	}
+
+	@Override
 	public void uninject( Player player ) {
 		PlayerConnection conn = ( ( CraftPlayer ) player ).getHandle().b;
 		NetworkManager manager = conn.b;
