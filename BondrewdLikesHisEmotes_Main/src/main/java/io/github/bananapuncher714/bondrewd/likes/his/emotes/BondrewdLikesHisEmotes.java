@@ -481,6 +481,8 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
             for (Emote emote : emotes_and_spaces) {
                 List<TextComponent> temp = new LinkedList<TextComponent>();
                 String key = String.format(EMOTE_FORMAT, emote.getId());
+
+                if (!text.getText().contains(key)) continue;
                 for (TextComponent comp : components) {
                     String val = comp.getText();
                     String[] split = val.split("(?<!\\\\)" + key, -1);
