@@ -43,7 +43,6 @@ import java.nio.file.Files;
 import java.util.List;
 import java.util.*;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 
 public class BondrewdLikesHisEmotes extends JavaPlugin {
     // Could technically be 8, but it's small enough as it is so why not 11
@@ -132,12 +131,6 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 
         loadConfig();
         loadPermissions();
-
-        if (emotes.isEmpty()) {
-            getLogger().info("Didn't detect any emotes!");
-        } else {
-            getLogger().info("Loaded emotes: " + String.join(" ", emotes.stream().map(Emote::getId).collect(Collectors.toList())));
-        }
     }
 
     @Override
@@ -251,10 +244,6 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
         DEFAULT_GIF_FOLDER = config.getString("default-gif-folder", "gifs");
         DEFAULT_GIF_FONT = config.getString("default-gif-font", "default");
 
-        NEGATIVE_SPACE_TYPE = NegativeSpaceType.valueOf(config.getString("negative-space-type", "LEGACY").toUpperCase());
-        NEGATIVE_SPACE_FONT = config.getString("negative-space-font", "space");
-        NEGATIVE_SPACE_TEXTURE = config.getString("negative-space-texture", "space:font/space.png");
-
         String noEmoteMessageString = config.getString("messages.no-emote");
         if (noEmoteMessageString != null && !noEmoteMessageString.isEmpty()) {
             noEmoteMessage = MineDown.parse(noEmoteMessageString);
@@ -356,24 +345,13 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 
         emotes_and_spaces.addAll(emotes);
 
-
-        // Load in negative spaces
-        generateSpaceEmoteInfo(fonts, charHolder);
-        if (NEGATIVE_SPACE_TYPE == null || NEGATIVE_SPACE_TYPE == NegativeSpaceType.LEGACY) {
-            addLegacySpaceEntries(fonts);
-        } else if (NEGATIVE_SPACE_TYPE == NegativeSpaceType.MODERN) {
-            addModernSpaceEntries(fonts);
-        }
-
-        emotes_and_spaces.addAll(spaces);
+        loadSpaceEmotes(fonts, charHolder);
 
         for (Entry<String, FontIndex> entry : fonts.entrySet()) {
             File fontFile = new File(getDataFolder() + "/fonts/" + entry.getKey() + ".json");
             FontIndex index = entry.getValue();
 
-            if (fontFile.exists()) {
-                fontFile.delete();
-            }
+            if (fontFile.exists()) fontFile.delete();
             fontFile.getParentFile().mkdirs();
 
             try {
@@ -385,6 +363,26 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
                 e.printStackTrace();
             }
         }
+
+        if (emotes.isEmpty()) getLogger().info("Didn't detect any emotes!");
+        else getLogger().info("Loaded " + emotes.size() + " emotes!");
+    }
+
+    private void loadSpaceEmotes(Map<String, FontIndex> fonts, Map<String, Integer> charHolder) {
+        FileConfiguration config = YamlConfiguration.loadConfiguration(new File(getDataFolder() + "/" + "config.yml"));
+
+        NEGATIVE_SPACE_TYPE = NegativeSpaceType.valueOf(config.getString("negative-space-type", "LEGACY").toUpperCase());
+        NEGATIVE_SPACE_FONT = config.getString("negative-space-font", "space");
+        NEGATIVE_SPACE_TEXTURE = config.getString("negative-space-texture", "space:font/space.png");
+        emotes_and_spaces.clear();
+
+        // Load in negative spaces
+        generateSpaceEmoteInfo(fonts, charHolder);
+        if (NEGATIVE_SPACE_TYPE == NegativeSpaceType.MODERN) {
+            addModernSpaceEntries(fonts);
+        } else addLegacySpaceEntries(fonts);
+
+        emotes_and_spaces.addAll(spaces);
     }
 
     private void generateSpaceEmoteInfo(Map<String, FontIndex> fonts, Map<String, Integer> charHolder) {
