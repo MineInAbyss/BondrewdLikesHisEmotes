@@ -259,10 +259,12 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 
         emotes.clear();
         spaces.clear();
+        emotes_and_spaces.clear();
         Map<String, FontIndex> fonts = new HashMap<String, FontIndex>();
 
         int c = STARTING_CHAR;
         Map<String, Integer> charHolder = new HashMap<String, Integer>();
+
         List<String> emoteList = config.getStringList("emotes");
         for (String emote : emoteList) {
             EmoteInfo emoteInfo = parseEmoteFrom(emote);
@@ -374,7 +376,6 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
         NEGATIVE_SPACE_TYPE = NegativeSpaceType.valueOf(config.getString("negative-space-type", "LEGACY").toUpperCase());
         NEGATIVE_SPACE_FONT = config.getString("negative-space-font", "space");
         NEGATIVE_SPACE_TEXTURE = config.getString("negative-space-texture", "space:font/space.png");
-        emotes_and_spaces.clear();
 
         // Load in negative spaces
         generateSpaceEmoteInfo(fonts, charHolder);
