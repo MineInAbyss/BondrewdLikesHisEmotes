@@ -343,9 +343,9 @@ public class NMSHandler implements PacketHandler {
                 } else if (base instanceof NBTTagList) {
                     transform((NBTTagList) base, transformer);
                 } else if (base instanceof NBTTagString) {
-                    String val = base.m_();
+                    int index = list.indexOf(base);
                     list.remove(base);
-                    list.add(NBTTagString.a(transformer.apply(val)));
+                    list.add(index, NBTTagString.a(transformer.apply(base.m_())));
                 }
             }
         }

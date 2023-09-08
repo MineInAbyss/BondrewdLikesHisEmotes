@@ -31,7 +31,6 @@ import org.bukkit.scheduler.BukkitRunnable;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.net.SocketAddress;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Function;
@@ -344,9 +343,9 @@ public class NMSHandler implements PacketHandler {
                 } else if (base instanceof NBTTagList) {
                     transform((NBTTagList) base, transformer);
                 } else if (base instanceof NBTTagString) {
-                    String val = base.f_();
+                    int index = list.indexOf(base);
                     list.remove(base);
-                    list.add(NBTTagString.a(transformer.apply(val)));
+                    list.add(index, NBTTagString.a(transformer.apply(base.f_())));
                 }
             }
         }
