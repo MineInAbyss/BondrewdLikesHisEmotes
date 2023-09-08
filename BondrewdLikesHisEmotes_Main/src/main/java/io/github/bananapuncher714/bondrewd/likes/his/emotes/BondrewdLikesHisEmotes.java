@@ -17,6 +17,7 @@ import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.*;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.chat.HoverEvent.Action;
+import org.apache.commons.lang.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -495,40 +496,42 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 
             List<TextComponent> components = new LinkedList<TextComponent>();
             components.add(text);
-            if (text.getText().contains(":space_")) for (Emote space : spaces) {
-                List<TextComponent> temp = new LinkedList<TextComponent>();
-                String key = String.format(EMOTE_FORMAT, space.getId());
-                int spaceSize = Integer.parseInt(space.getId().split("space_")[1]);
+            if (text.getText().contains(":space_")) {
+                int[] spaces = Arrays.stream(StringUtils.substringsBetween(text.getText(), ":space_", ":")).mapToInt(Integer::parseInt).toArray();
+                for (int space : spaces) {
+                    List<TextComponent> temp = new LinkedList<TextComponent>();
+                    String key = String.format(EMOTE_FORMAT, "space_" + space);
 
-                if (!text.getText().contains(key)) continue;
-                for (TextComponent comp : components) {
-                    String val = comp.getText();
-                    String[] split = val.split("(?<!\\\\)" + key, -1);
-                    if (split.length > 1) {
-                        for (int i = 0; i < split.length; i++) {
-                            String sub = split[i].replace("\\" + key, key);
-                            if (!sub.isEmpty()) {
-                                TextComponent subText = new TextComponent(sub);
-                                subText.copyFormatting(text);
-                                temp.add(subText);
+                    if (!text.getText().contains(key)) continue;
+                    for (TextComponent comp : components) {
+                        String val = comp.getText();
+                        String[] split = val.split("(?<!\\\\)" + key, -1);
+                        if (split.length > 1) {
+                            for (int i = 0; i < split.length; i++) {
+                                String sub = split[i].replace("\\" + key, key);
+                                if (!sub.isEmpty()) {
+                                    TextComponent subText = new TextComponent(sub);
+                                    subText.copyFormatting(text);
+                                    temp.add(subText);
+                                }
+
+                                if (i < split.length - 1) {
+                                    TextComponent emoteComp = new TextComponent(formatSpace(space));
+
+                                    emoteComp.setFont(NEGATIVE_SPACE_FONT);
+                                    temp.add(emoteComp);
+                                }
                             }
-
-                            if (i < split.length - 1) {
-                                TextComponent emoteComp = new TextComponent(formatSpace(spaceSize));
-
-                                emoteComp.setFont(space.getFont());
-                                temp.add(emoteComp);
+                        } else {
+                            if (full) {
+                                comp.setText(comp.getText().replace("\\" + key, formatSpace(space)));
                             }
+                            temp.add(comp);
                         }
-                    } else {
-                        if (full) {
-                            comp.setText(comp.getText().replace("\\" + key, formatSpace(spaceSize)));
-                        }
-                        temp.add(comp);
                     }
-                }
 
-                components = temp;
+                    components = temp;
+                }
             }
 
             for (Emote emote :  emotes) {
