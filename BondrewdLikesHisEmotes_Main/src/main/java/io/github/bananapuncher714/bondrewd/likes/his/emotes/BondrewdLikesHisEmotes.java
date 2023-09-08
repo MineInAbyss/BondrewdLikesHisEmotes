@@ -388,18 +388,37 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 
     private void generateSpaceEmoteInfo(Map<String, FontIndex> fonts, Map<String, Integer> charHolder) {
         int v = charHolder.getOrDefault(NEGATIVE_SPACE_FONT, (int) STARTING_CHAR);
-        for (int i = 1; i <= 1028; i++) {
+        for (int i = 1; i <= 1024;) {
             Emote space = generateSpaceData(fonts, charHolder, v, i);
             if (space == null) continue;
             spaces.add(space);
+            powersPlus.put(i, space.value);
             v++;
+            i *= 2;
         }
-        for (int i = -1; i >= -1028; i--) {
+        for (int i = -1; i >= -1024;) {
             Emote space = generateSpaceData(fonts, charHolder, v, i);
             if (space == null) continue;
             spaces.add(space);
+            powersMinus.put(i, space.value);
             v++;
+            i *= 2;
         }
+    }
+
+    private static final Map<Integer, String> powersPlus = new HashMap<>();
+    private static final Map<Integer, String> powersMinus = new HashMap<>();
+    public static String formatSpace(int space) {
+        StringBuilder result = new StringBuilder();
+        Map<Integer, String> powers = (space > 0) ? powersPlus : powersMinus;
+        for (int i = 0; i < powers.size(); i++) {
+            int bit = 1 << i;
+            if ((Math.abs(space) & bit) != 0) {
+                result.append(powers.get(bit));
+            }
+        }
+
+        return result.toString();
     }
 
     private Emote generateSpaceData(Map<String, FontIndex> fonts, Map<String, Integer> charHolder, int v, int i) {
@@ -476,8 +495,43 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 
             List<TextComponent> components = new LinkedList<TextComponent>();
             components.add(text);
+            if (text.getText().contains(":space_")) for (Emote space : spaces) {
+                List<TextComponent> temp = new LinkedList<TextComponent>();
+                String key = String.format(EMOTE_FORMAT, space.getId());
+                int spaceSize = Integer.parseInt(space.getId().split("space_")[1]);
 
-            for (Emote emote : text.getText().contains(":space_") ? emotes_and_spaces : emotes) {
+                if (!text.getText().contains(key)) continue;
+                for (TextComponent comp : components) {
+                    String val = comp.getText();
+                    String[] split = val.split("(?<!\\\\)" + key, -1);
+                    if (split.length > 1) {
+                        for (int i = 0; i < split.length; i++) {
+                            String sub = split[i].replace("\\" + key, key);
+                            if (!sub.isEmpty()) {
+                                TextComponent subText = new TextComponent(sub);
+                                subText.copyFormatting(text);
+                                temp.add(subText);
+                            }
+
+                            if (i < split.length - 1) {
+                                TextComponent emoteComp = new TextComponent(formatSpace(spaceSize));
+
+                                emoteComp.setFont(space.getFont());
+                                temp.add(emoteComp);
+                            }
+                        }
+                    } else {
+                        if (full) {
+                            comp.setText(comp.getText().replace("\\" + key, formatSpace(spaceSize)));
+                        }
+                        temp.add(comp);
+                    }
+                }
+
+                components = temp;
+            }
+
+            for (Emote emote :  emotes) {
                 List<TextComponent> temp = new LinkedList<TextComponent>();
                 String key = String.format(EMOTE_FORMAT, emote.getId());
 
@@ -536,11 +590,6 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
 
                                 if (hover == null && full) {
                                     emoteComp.setHoverEvent(new HoverEvent(Action.SHOW_TEXT, new BaseComponent[]{new TextComponent(key)}));
-                                }
-                                // Remove hover and click from spaces
-                                if (spaces.contains(emote)) {
-                                    emoteComp.setClickEvent(null);
-                                    emoteComp.setHoverEvent(null);
                                 }
                                 temp.add(emoteComp);
                             }
