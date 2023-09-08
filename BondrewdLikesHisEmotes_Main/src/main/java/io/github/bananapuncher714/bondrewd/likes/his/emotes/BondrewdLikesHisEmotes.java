@@ -477,7 +477,7 @@ public class BondrewdLikesHisEmotes extends JavaPlugin {
             List<TextComponent> components = new LinkedList<TextComponent>();
             components.add(text);
 
-            for (Emote emote : emotes_and_spaces) {
+            for (Emote emote : text.getText().contains(":space_") ? emotes_and_spaces : emotes) {
                 List<TextComponent> temp = new LinkedList<TextComponent>();
                 String key = String.format(EMOTE_FORMAT, emote.getId());
 
